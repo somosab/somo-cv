@@ -1,2766 +1,1835 @@
 """
 ╔══════════════════════════════════════════════════════════════╗
-║         EA SPORTS FC MOBILE 25/26 - COMPANION APP           ║
-║              Streamlit orqali to'liq boshqaruv               ║
+║     EA SPORTS FC MOBILE — HAQIQIY O'YIN DIZAYNI             ║
+║     Somosab | OVR 121 | Real Madrid                         ║
 ╚══════════════════════════════════════════════════════════════╝
 """
 
 import streamlit as st
 import pandas as pd
 import numpy as np
-import plotly.express as px
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
+import plotly.express as px
 import random
 import math
 from datetime import datetime, timedelta
-import json
 
-# ═══════════════════════════════════════════════════════════════
-#  SAHIFA KONFIGURATSIYASI
-# ═══════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════
+#  PAGE CONFIG
+# ══════════════════════════════════════════════════
 st.set_page_config(
-    page_title="⚽ FC Mobile 26 Companion",
+    page_title="FC Mobile – Somosab",
     page_icon="⚽",
     layout="wide",
-    initial_sidebar_state="expanded",
-    menu_items={
-        "Get help": None,
-        "Report a bug": None,
-        "About": "FC Mobile 26 Companion App - Barcha ma'lumotlar"
-    }
+    initial_sidebar_state="collapsed"
 )
 
-# ═══════════════════════════════════════════════════════════════
-#  CSS USLUB
-# ═══════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════
+#  GLOBAL CSS — FC MOBILE DARK THEME
+# ══════════════════════════════════════════════════
 st.markdown("""
 <style>
-    /* Asosiy ranglar */
-    :root {
-        --fc-green: #00B050;
-        --fc-dark: #0a0a0a;
-        --fc-gold: #FFD700;
-        --fc-blue: #003087;
-        --fc-red: #C41E3A;
-    }
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600;700&display=swap');
 
-    /* Asosiy fon */
-    .stApp {
-        background: linear-gradient(135deg, #0a0a1a 0%, #0d1b2a 50%, #0a1628 100%);
-        color: #ffffff;
-    }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* Sidebar */
-    .css-1d391kg, [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #051020 0%, #0a1628 100%);
-        border-right: 2px solid #00B050;
-    }
+html, body, .stApp {
+    background: #0a0c10 !important;
+    color: #e8e8e8 !important;
+    font-family: 'Barlow', sans-serif !important;
+}
 
-    /* Metrik kartalar */
-    [data-testid="metric-container"] {
-        background: linear-gradient(135deg, rgba(0,176,80,0.15) 0%, rgba(0,48,135,0.15) 100%);
-        border: 1px solid rgba(0,176,80,0.3);
-        border-radius: 12px;
-        padding: 15px;
-        backdrop-filter: blur(10px);
-    }
+/* Hide default streamlit chrome */
+#MainMenu, footer, header { visibility: hidden !important; }
+.block-container { padding: 0 !important; max-width: 100% !important; }
+[data-testid="stSidebar"] { display: none !important; }
+section[data-testid="stSidebar"] { display: none !important; }
+div[data-testid="collapsedControl"] { display: none !important; }
 
-    /* Tugmalar */
-    .stButton > button {
-        background: linear-gradient(135deg, #00B050, #007A35);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 10px 20px;
-        font-weight: bold;
-        transition: all 0.3s ease;
-        width: 100%;
-    }
+/* ── TOP NAV BAR ── */
+.fc-topbar {
+    background: linear-gradient(180deg, #111520 0%, #0d1018 100%);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky; top: 0; z-index: 100;
+}
+.fc-profile-info { display: flex; align-items: center; gap: 12px; }
+.fc-avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a6b2e, #0d4a1f);
+    border: 2px solid #22c55e;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; color: white; font-weight: 900;
+}
+.fc-username { font-size: 15px; font-weight: 700; color: #f0f0f0; }
+.fc-level-bar-wrap { display: flex; align-items: center; gap: 6px; }
+.fc-level-num { font-size: 11px; color: #22c55e; font-weight: 700; }
+.fc-level-bar {
+    width: 80px; height: 5px; background: rgba(255,255,255,0.1);
+    border-radius: 3px; overflow: hidden;
+}
+.fc-level-fill {
+    height: 100%; border-radius: 3px;
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+.fc-currencies { display: flex; gap: 14px; align-items: center; }
+.fc-coin {
+    display: flex; align-items: center; gap: 5px;
+    background: rgba(255,215,0,0.1); border: 1px solid rgba(255,215,0,0.25);
+    border-radius: 20px; padding: 4px 10px;
+}
+.fc-gem {
+    display: flex; align-items: center; gap: 5px;
+    background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 20px; padding: 4px 10px;
+}
+.fc-coin-val { font-size: 12px; font-weight: 700; color: #fbbf24; }
+.fc-gem-val { font-size: 12px; font-weight: 700; color: #ef4444; }
 
-    .stButton > button:hover {
-        background: linear-gradient(135deg, #00D060, #00B050);
-        transform: translateY(-2px);
-        box-shadow: 0 5px 20px rgba(0,176,80,0.4);
-    }
+/* ── BOTTOM NAV ── */
+.fc-bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+    background: linear-gradient(180deg, #0d1018, #111520);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    display: flex; justify-content: space-around; align-items: center;
+    padding: 8px 0 12px 0;
+}
+.fc-nav-item {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 3px; cursor: pointer; padding: 4px 12px;
+    border-radius: 8px; transition: all 0.2s;
+    text-decoration: none;
+}
+.fc-nav-icon { font-size: 20px; }
+.fc-nav-label { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; color: #6b7280; }
+.fc-nav-label.active { color: #22c55e; }
 
-    /* Kartalar */
-    .player-card {
-        background: linear-gradient(135deg, rgba(255,215,0,0.1) 0%, rgba(0,48,135,0.2) 100%);
-        border: 2px solid rgba(255,215,0,0.3);
-        border-radius: 15px;
-        padding: 20px;
-        text-align: center;
-        transition: all 0.3s ease;
-    }
+/* ── PLAYER CARD ── */
+.fc-card {
+    position: relative;
+    border-radius: 12px;
+    padding: 12px 10px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    overflow: hidden;
+    min-height: 160px;
+}
+.fc-card:hover { transform: translateY(-4px); }
 
-    .player-card:hover {
-        border-color: #FFD700;
-        box-shadow: 0 10px 30px rgba(255,215,0,0.2);
-        transform: translateY(-5px);
-    }
+.fc-card-icon { border-color: #f59e0b; background: linear-gradient(145deg, #1a1209, #251a0a); }
+.fc-card-hero { border-color: #a855f7; background: linear-gradient(145deg, #170d24, #1f0f30); }
+.fc-card-gold { border-color: #d97706; background: linear-gradient(145deg, #1a1507, #221c08); }
+.fc-card-silver { border-color: #9ca3af; background: linear-gradient(145deg, #111318, #161b22); }
+.fc-card-special { border-color: #06b6d4; background: linear-gradient(145deg, #071820, #091f28); }
 
-    /* OVR badge */
-    .ovr-badge {
-        display: inline-block;
-        background: linear-gradient(135deg, #FFD700, #FFA500);
-        color: #000;
-        font-weight: bold;
-        font-size: 24px;
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        line-height: 60px;
-        text-align: center;
-        margin: 10px auto;
-    }
+.fc-card-pos-badge {
+    position: absolute; top: 7px; left: 8px;
+    font-size: 10px; font-weight: 800;
+    padding: 2px 5px; border-radius: 4px;
+    letter-spacing: 0.5px;
+}
+.pos-att { background: rgba(239,68,68,0.85); color: white; }
+.pos-mid { background: rgba(34,197,94,0.85); color: white; }
+.pos-def { background: rgba(59,130,246,0.85); color: white; }
+.pos-gk  { background: rgba(234,179,8,0.85); color: black; }
 
-    /* Section headers */
-    .section-header {
-        background: linear-gradient(135deg, rgba(0,176,80,0.2), rgba(0,48,135,0.2));
-        border-left: 4px solid #00B050;
-        border-radius: 0 10px 10px 0;
-        padding: 15px 20px;
-        margin: 20px 0;
-        font-size: 22px;
-        font-weight: bold;
-        color: #00FF88;
-    }
+.fc-card-ovr {
+    position: absolute; top: 5px; right: 8px;
+    font-size: 18px; font-weight: 900;
+    font-family: 'Barlow Condensed', sans-serif;
+}
+.ovr-icon   { color: #fbbf24; text-shadow: 0 0 10px rgba(251,191,36,0.6); }
+.ovr-hero   { color: #d946ef; text-shadow: 0 0 10px rgba(217,70,239,0.6); }
+.ovr-gold   { color: #f59e0b; text-shadow: 0 0 10px rgba(245,158,11,0.5); }
+.ovr-silver { color: #9ca3af; }
+.ovr-special{ color: #22d3ee; text-shadow: 0 0 10px rgba(34,211,238,0.6); }
 
-    /* Jadval uslubi */
-    .stDataFrame {
-        border-radius: 12px;
-        overflow: hidden;
-    }
+.fc-card-emoji { font-size: 32px; margin: 22px 0 4px; display: block; }
 
-    /* Info boxlar */
-    .info-box {
-        background: rgba(0,176,80,0.1);
-        border: 1px solid rgba(0,176,80,0.3);
-        border-radius: 10px;
-        padding: 15px;
-        margin: 10px 0;
-    }
+.fc-card-name {
+    font-size: 11px; font-weight: 800;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    color: #f0f0f0;
+}
+.fc-card-club { font-size: 9px; color: #9ca3af; margin-top: 2px; }
 
-    /* Warning box */
-    .warning-box {
-        background: rgba(255,165,0,0.1);
-        border: 1px solid rgba(255,165,0,0.3);
-        border-radius: 10px;
-        padding: 15px;
-        margin: 10px 0;
-    }
+.fc-card-rank { margin-top: 6px; font-size: 10px; color: #fbbf24; letter-spacing: 1px; }
 
-    /* Formation field */
-    .formation-cell {
-        background: rgba(0,176,80,0.2);
-        border: 1px solid rgba(0,176,80,0.4);
-        border-radius: 8px;
-        padding: 8px;
-        text-align: center;
-        font-size: 12px;
-        font-weight: bold;
-        margin: 3px;
-    }
+.fc-card-border-icon   { border: 2px solid #f59e0b; box-shadow: 0 0 12px rgba(245,158,11,0.3); }
+.fc-card-border-hero   { border: 2px solid #a855f7; box-shadow: 0 0 12px rgba(168,85,247,0.3); }
+.fc-card-border-gold   { border: 2px solid #d97706; }
+.fc-card-border-silver { border: 1px solid #4b5563; }
+.fc-card-border-special{ border: 2px solid #06b6d4; box-shadow: 0 0 12px rgba(6,182,212,0.3); }
 
-    /* Title gradient */
-    .main-title {
-        background: linear-gradient(135deg, #00FF88, #FFD700, #00B0FF);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        font-size: 42px;
-        font-weight: 900;
-        text-align: center;
-        margin-bottom: 5px;
-    }
+/* ── SECTION HEADERS ── */
+.fc-section-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px; font-weight: 800;
+    color: #f0f0f0; letter-spacing: 1px;
+    text-transform: uppercase;
+    display: flex; align-items: center; gap: 8px;
+    padding: 14px 20px 8px;
+}
+.fc-section-line {
+    height: 2px;
+    background: linear-gradient(90deg, #22c55e 0%, rgba(34,197,94,0.1) 60%, transparent 100%);
+    margin: 0 20px 14px;
+    border-radius: 1px;
+}
 
-    /* Divider */
-    .green-divider {
-        height: 3px;
-        background: linear-gradient(90deg, transparent, #00B050, transparent);
-        margin: 20px 0;
-        border-radius: 2px;
-    }
+/* ── CONTENT WRAPPER ── */
+.fc-page { padding: 0 0 80px 0; }
+.fc-content { padding: 0 16px; }
 
-    /* Progress bar */
-    .stat-bar-container {
-        background: rgba(255,255,255,0.1);
-        border-radius: 10px;
-        height: 12px;
-        margin: 5px 0;
-        overflow: hidden;
-    }
+/* ── OVR BADGE (big) ── */
+.fc-ovr-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #dc2626, #991b1b);
+    color: white; font-weight: 900; font-size: 22px;
+    font-family: 'Barlow Condensed', sans-serif;
+    width: 56px; height: 56px; border-radius: 12px;
+    border: 2px solid rgba(255,255,255,0.2);
+    box-shadow: 0 4px 16px rgba(220,38,38,0.4);
+}
+.fc-ovr-label { font-size: 9px; letter-spacing: 1px; opacity: 0.7; margin-top: 1px; }
 
-    /* Tab styling */
-    .stTabs [data-baseweb="tab-list"] {
-        background: rgba(0,0,0,0.3);
-        border-radius: 10px;
-        padding: 5px;
-    }
+/* ── TEAM INFO PANEL ── */
+.fc-team-panel {
+    background: linear-gradient(135deg, #111520, #0d1520);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px; padding: 16px;
+    display: flex; flex-direction: column; gap: 10px;
+}
+.fc-team-row { display: flex; align-items: center; gap: 10px; }
+.fc-formation-badge {
+    background: rgba(34,197,94,0.15);
+    border: 1px solid rgba(34,197,94,0.3);
+    border-radius: 8px; padding: 4px 10px;
+    font-size: 12px; font-weight: 700; color: #22c55e;
+}
+.fc-coins-row {
+    display: flex; align-items: center; gap: 6px;
+    color: #fbbf24; font-size: 13px; font-weight: 600;
+}
 
-    .stTabs [data-baseweb="tab"] {
-        color: #aaaaaa;
-        border-radius: 8px;
-        padding: 8px 16px;
-    }
+/* ── PITCH FIELD ── */
+.fc-pitch-wrap {
+    background: linear-gradient(180deg, #1a3d1a 0%, #1e4a1e 40%, #1a3d1a 100%);
+    border-radius: 12px; padding: 20px 10px;
+    position: relative;
+    min-height: 360px;
+    border: 2px solid rgba(255,255,255,0.06);
+    overflow: hidden;
+}
+.fc-pitch-lines {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 50%/100% 1px,
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px) 0 20%/100% 1px,
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px) 0 80%/100% 1px;
+}
+.fc-field-player {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 2px;
+}
+.fc-field-card {
+    width: 54px; height: 62px;
+    border-radius: 8px; border: 1.5px solid;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 1px; padding: 4px; position: relative;
+    cursor: pointer; transition: transform 0.15s;
+}
+.fc-field-card:hover { transform: scale(1.08); }
+.fc-field-card-ovr { font-size: 14px; font-weight: 900; font-family: 'Barlow Condensed', sans-serif; }
+.fc-field-card-emoji { font-size: 18px; }
+.fc-field-card-pos {
+    position: absolute; top: 2px; left: 3px;
+    font-size: 7px; font-weight: 800;
+    padding: 1px 3px; border-radius: 2px;
+}
+.fc-field-name { font-size: 9px; font-weight: 700; color: #d1fae5; text-transform: uppercase; letter-spacing: 0.3px; text-align: center; max-width: 60px; }
+.fc-field-pos-label { font-size: 8px; color: rgba(255,255,255,0.4); }
 
-    .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #00B050, #007A35) !important;
-        color: white !important;
-    }
+/* ── TRANSFER MARKET ── */
+.fc-market-card {
+    background: linear-gradient(145deg, #111520, #0d1218);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px; padding: 12px;
+    display: flex; flex-direction: column; gap: 8px;
+    cursor: pointer; transition: border-color 0.2s;
+}
+.fc-market-card:hover { border-color: rgba(34,197,94,0.4); }
+.fc-market-price {
+    display: flex; align-items: center; gap: 4px;
+    color: #fbbf24; font-size: 12px; font-weight: 700;
+}
+.fc-market-selected {
+    background: linear-gradient(145deg, #1a2535, #111d2e);
+    border: 2px solid rgba(34,197,94,0.5);
+    border-radius: 12px; padding: 16px;
+}
+.fc-purchase-btn {
+    background: linear-gradient(135deg, #ca8a04, #a16207);
+    color: white; font-weight: 800; font-size: 14px;
+    letter-spacing: 1px; text-transform: uppercase;
+    padding: 12px; border-radius: 8px;
+    border: none; width: 100%; cursor: pointer;
+    text-align: center;
+}
 
-    /* Sidebar menu */
-    .sidebar-menu-item {
-        padding: 10px 15px;
-        border-radius: 8px;
-        margin: 3px 0;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
+/* ── TABS STYLING ── */
+.stTabs [data-baseweb="tab-list"] {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+    gap: 0 !important; padding: 0 16px !important;
+}
+.stTabs [data-baseweb="tab"] {
+    background: transparent !important;
+    color: #6b7280 !important;
+    border-bottom: 2px solid transparent !important;
+    padding: 10px 16px !important;
+    font-size: 12px !important; font-weight: 700 !important;
+    letter-spacing: 0.5px !important; text-transform: uppercase !important;
+}
+.stTabs [aria-selected="true"] {
+    color: #22c55e !important;
+    border-bottom-color: #22c55e !important;
+}
+.stTabs [data-baseweb="tab-panel"] { padding: 0 !important; }
 
-    /* Footer */
-    .footer {
-        text-align: center;
-        color: #666;
-        padding: 20px;
-        border-top: 1px solid rgba(0,176,80,0.2);
-        margin-top: 40px;
-    }
+/* ── BUTTONS ── */
+.stButton > button {
+    background: linear-gradient(135deg, #1e3a2f, #16302b) !important;
+    color: #22c55e !important;
+    border: 1px solid rgba(34,197,94,0.3) !important;
+    border-radius: 8px !important;
+    font-weight: 700 !important; letter-spacing: 0.5px !important;
+    font-size: 13px !important;
+    transition: all 0.2s !important;
+    padding: 8px 16px !important;
+}
+.stButton > button:hover {
+    border-color: #22c55e !important;
+    box-shadow: 0 0 12px rgba(34,197,94,0.3) !important;
+}
 
-    /* Glassmorphism card */
-    .glass-card {
-        background: rgba(255,255,255,0.05);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 15px;
-        padding: 20px;
-        margin: 10px 0;
-    }
+/* Primary action button */
+.btn-primary > button {
+    background: linear-gradient(135deg, #15803d, #166534) !important;
+    color: white !important;
+    border: none !important;
+    font-size: 14px !important; font-weight: 800 !important;
+    letter-spacing: 1px !important;
+}
 
-    /* Gold text */
-    .gold-text { color: #FFD700; font-weight: bold; }
-    .green-text { color: #00FF88; font-weight: bold; }
-    .red-text { color: #FF4444; font-weight: bold; }
-    .blue-text { color: #00B0FF; font-weight: bold; }
+/* ── FORM INPUTS ── */
+.stTextInput > div > div > input,
+.stSelectbox > div > div,
+.stNumberInput > div > div > input {
+    background: #111520 !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    color: #e8e8e8 !important;
+    border-radius: 8px !important;
+}
 
-    /* Hide streamlit default elements */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
+/* ── METRICS ── */
+[data-testid="metric-container"] {
+    background: #111520 !important;
+    border: 1px solid rgba(255,255,255,0.06) !important;
+    border-radius: 10px !important;
+    padding: 14px !important;
+}
+[data-testid="metric-container"] [data-testid="stMetricLabel"] { color: #6b7280 !important; }
+[data-testid="metric-container"] [data-testid="stMetricValue"] { color: #22c55e !important; }
+[data-testid="stMetricDelta"] { font-size: 11px !important; }
+
+/* ── EXPANDER ── */
+.streamlit-expanderHeader {
+    background: #111520 !important;
+    border-radius: 8px !important;
+    color: #e8e8e8 !important;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: #0a0c10; }
+::-webkit-scrollbar-thumb { background: #22c55e44; border-radius: 2px; }
+
+/* ── INFO / WARNING / SUCCESS ── */
+.stInfo    { background: rgba(34,197,94,0.08) !important; border: 1px solid rgba(34,197,94,0.2) !important; }
+.stWarning { background: rgba(245,158,11,0.08) !important; border: 1px solid rgba(245,158,11,0.2) !important; }
+.stSuccess { background: rgba(34,197,94,0.12) !important; border: 1px solid rgba(34,197,94,0.3) !important; }
+.stError   { background: rgba(239,68,68,0.08) !important; border: 1px solid rgba(239,68,68,0.2) !important; }
+
+/* ── DRAFT CARD ── */
+.draft-pool-card {
+    background: linear-gradient(145deg, #1a1409, #221c08);
+    border: 2px solid #d97706;
+    border-radius: 12px; padding: 14px;
+    text-align: center; position: relative;
+    cursor: pointer; transition: transform 0.2s;
+    box-shadow: 0 0 15px rgba(217,119,6,0.2);
+}
+.draft-pool-card:hover { transform: scale(1.04); }
+
+/* ── STORE CARD ── */
+.store-card {
+    background: linear-gradient(145deg, #111520, #0d1218);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px; padding: 16px;
+    text-align: center; position: relative;
+}
+.store-badge-sale {
+    position: absolute; top: -8px; right: -8px;
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: white; font-size: 10px; font-weight: 800;
+    padding: 4px 7px; border-radius: 20px;
+    letter-spacing: 0.5px;
+}
+.store-limit-badge {
+    background: rgba(107,114,128,0.3); color: #9ca3af;
+    font-size: 9px; font-weight: 700;
+    padding: 2px 7px; border-radius: 4px;
+    display: inline-block; margin-bottom: 8px;
+    letter-spacing: 0.5px; text-transform: uppercase;
+}
+
+/* ── EXCHANGE CARD ── */
+.exchange-card {
+    background: linear-gradient(145deg, #12100a, #1a1507);
+    border: 2px solid rgba(217,119,6,0.4);
+    border-radius: 14px; padding: 16px;
+    cursor: pointer; transition: border-color 0.2s;
+    position: relative;
+}
+.exchange-card:hover { border-color: #d97706; }
+
+/* ── DATAFRAME ── */
+.stDataFrame { border-radius: 10px !important; overflow: hidden !important; }
+iframe { border-radius: 8px !important; }
+
+/* ── HOME BANNER ── */
+.home-banner {
+    background: linear-gradient(135deg, #0f1b2d 0%, #1a0a2e 50%, #0a1a0f 100%);
+    border-radius: 14px; overflow: hidden;
+    position: relative; padding: 24px;
+    border: 1px solid rgba(255,255,255,0.06);
+    margin: 0 16px 16px;
+}
+.home-banner-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 36px; font-weight: 900;
+    color: #f0f0f0; letter-spacing: 1px;
+    text-transform: uppercase;
+    line-height: 1.1;
+}
+.home-banner-sub {
+    font-size: 13px; color: #9ca3af;
+    margin: 6px 0 16px;
+}
+.go-now-btn {
+    background: linear-gradient(135deg, #d4a017, #a07010);
+    color: #000; font-weight: 800; font-size: 13px;
+    letter-spacing: 1.5px; padding: 10px 24px;
+    border-radius: 24px; display: inline-block;
+    cursor: pointer; text-transform: uppercase;
+}
+.club-card {
+    background: linear-gradient(135deg, #1a2535, #111d2e);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px; padding: 14px;
+    display: flex; align-items: center; gap: 12px;
+}
+.play-card {
+    background: linear-gradient(135deg, #15803d, #166534);
+    border-radius: 12px; padding: 14px;
+    text-align: center; cursor: pointer;
+}
+.play-card-title {
+    font-size: 22px; font-weight: 900;
+    letter-spacing: 2px; color: white;
+}
+
+/* ── ACTIVITY ROW ── */
+.activity-item {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px; padding: 10px 14px;
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 8px; cursor: pointer;
+    transition: background 0.2s;
+}
+.activity-item:hover { background: rgba(34,197,94,0.06); }
+
+/* ── QUEST ITEM ── */
+.quest-item {
+    background: #111520;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px; padding: 14px;
+    margin-bottom: 8px;
+}
+.quest-progress-bar {
+    height: 6px; background: rgba(255,255,255,0.1);
+    border-radius: 3px; overflow: hidden; margin-top: 8px;
+}
+.quest-progress-fill {
+    height: 100%; border-radius: 3px;
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+    transition: width 0.3s;
+}
+
+/* ── LEAGUE TABLE ── */
+.league-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.league-pos { font-size: 14px; font-weight: 700; color: #6b7280; min-width: 24px; }
+.league-pos-top3 { color: #fbbf24; }
+.league-team { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+
+/* ── SLIDER ── */
+.stSlider > div > div { color: #22c55e !important; }
+.stSlider [data-baseweb="slider"] > div:first-child { background: rgba(255,255,255,0.1) !important; }
+.stSlider [data-baseweb="slider"] > div:last-child { background: #22c55e !important; }
+
+/* ── RADIO BUTTONS ── */
+.stRadio > div { flex-direction: row !important; gap: 8px !important; }
+.stRadio [data-testid="stMarkdownContainer"] { display: none !important; }
+
+/* ── CHECKBOX ── */
+.stCheckbox label { color: #9ca3af !important; font-size: 13px !important; }
+
+/* page wrapper padding */
+.main .block-container { padding-bottom: 80px !important; }
 </style>
 """, unsafe_allow_html=True)
 
 
-# ═══════════════════════════════════════════════════════════════
-#  MA'LUMOTLAR BAZASI
-# ═══════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════
+#  SESSION STATE
+# ══════════════════════════════════════════════════
+if "page" not in st.session_state:
+    st.session_state.page = "home"
+if "coins" not in st.session_state:
+    st.session_state.coins = 1_102_246_695
+if "gems" not in st.session_state:
+    st.session_state.gems = 2476
+if "selected_player" not in st.session_state:
+    st.session_state.selected_player = None
+if "watchlist" not in st.session_state:
+    st.session_state.watchlist = []
 
-# --- O'YINCHILAR MA'LUMOTLARI ---
-PLAYERS_DATA = [
-    # --- LEGENDLAR (109 OVR) ---
-    {"name": "Ronaldo (R9)", "position": "ST", "ovr": 109, "team": "Brazil", "league": "ICON", "nationality": "Brazil",
-     "pace": 95, "shooting": 99, "passing": 83, "dribbling": 97, "defending": 35, "physical": 91,
-     "skill_moves": 5, "weak_foot": 5, "type": "ICON", "price": 15000000},
-    {"name": "Ronaldinho", "position": "CAM", "ovr": 109, "team": "Brazil", "league": "ICON", "nationality": "Brazil",
-     "pace": 88, "shooting": 91, "passing": 93, "dribbling": 99, "defending": 40, "physical": 79,
-     "skill_moves": 5, "weak_foot": 4, "type": "ICON", "price": 14500000},
-    {"name": "Zidane", "position": "CM", "ovr": 109, "team": "France", "league": "ICON", "nationality": "France",
-     "pace": 83, "shooting": 87, "passing": 95, "dribbling": 97, "defending": 65, "physical": 85,
-     "skill_moves": 5, "weak_foot": 5, "type": "ICON", "price": 14000000},
-    {"name": "Gullit", "position": "CM", "ovr": 109, "team": "Netherlands", "league": "ICON", "nationality": "Netherlands",
-     "pace": 85, "shooting": 89, "passing": 90, "dribbling": 94, "defending": 70, "physical": 88,
-     "skill_moves": 4, "weak_foot": 4, "type": "ICON", "price": 13500000},
-    {"name": "Thierry Henry", "position": "ST", "ovr": 109, "team": "France", "league": "ICON", "nationality": "France",
-     "pace": 96, "shooting": 95, "passing": 82, "dribbling": 94, "defending": 42, "physical": 82,
-     "skill_moves": 4, "weak_foot": 3, "type": "ICON", "price": 13000000},
-    {"name": "Xabi Alonso", "position": "CM", "ovr": 109, "team": "Spain", "league": "ICON", "nationality": "Spain",
-     "pace": 72, "shooting": 80, "passing": 96, "dribbling": 82, "defending": 85, "physical": 83,
-     "skill_moves": 3, "weak_foot": 4, "type": "ICON", "price": 12000000},
-    {"name": "Zlatan Ibrahimovic", "position": "ST", "ovr": 109, "team": "Sweden", "league": "ICON", "nationality": "Sweden",
-     "pace": 80, "shooting": 97, "passing": 82, "dribbling": 91, "defending": 38, "physical": 96,
-     "skill_moves": 5, "weak_foot": 4, "type": "ICON", "price": 12500000},
-    {"name": "Marcelo", "position": "LB", "ovr": 109, "team": "Brazil", "league": "ICON", "nationality": "Brazil",
-     "pace": 88, "shooting": 72, "passing": 87, "dribbling": 90, "defending": 85, "physical": 79,
-     "skill_moves": 4, "weak_foot": 3, "type": "ICON", "price": 11000000},
-    {"name": "Lilian Thuram", "position": "RB", "ovr": 109, "team": "France", "league": "ICON", "nationality": "France",
-     "pace": 86, "shooting": 65, "passing": 81, "dribbling": 80, "defending": 95, "physical": 90,
-     "skill_moves": 3, "weak_foot": 3, "type": "ICON", "price": 11000000},
-    {"name": "Fernando Hierro", "position": "CB", "ovr": 109, "team": "Spain", "league": "ICON", "nationality": "Spain",
-     "pace": 77, "shooting": 71, "passing": 80, "dribbling": 72, "defending": 97, "physical": 93,
-     "skill_moves": 2, "weak_foot": 3, "type": "ICON", "price": 10500000},
-    {"name": "Iker Casillas", "position": "GK", "ovr": 109, "team": "Spain", "league": "ICON", "nationality": "Spain",
-     "pace": 58, "shooting": 40, "passing": 62, "dribbling": 45, "defending": 99, "physical": 80,
-     "skill_moves": 1, "weak_foot": 3, "type": "ICON", "price": 10000000},
-    {"name": "Pele", "position": "ST", "ovr": 109, "team": "Brazil", "league": "ICON", "nationality": "Brazil",
-     "pace": 92, "shooting": 98, "passing": 86, "dribbling": 96, "defending": 40, "physical": 85,
-     "skill_moves": 5, "weak_foot": 5, "type": "ICON", "price": 16000000},
-    {"name": "Diego Maradona", "position": "CAM", "ovr": 109, "team": "Argentina", "league": "ICON", "nationality": "Argentina",
-     "pace": 87, "shooting": 92, "passing": 91, "dribbling": 99, "defending": 45, "physical": 80,
-     "skill_moves": 5, "weak_foot": 4, "type": "ICON", "price": 15500000},
 
-    # --- HOZIRGI YULDUZLAR ---
-    {"name": "Jude Bellingham", "position": "CM", "ovr": 107, "team": "Real Madrid", "league": "La Liga", "nationality": "England",
-     "pace": 84, "shooting": 89, "passing": 89, "dribbling": 91, "defending": 79, "physical": 88,
-     "skill_moves": 4, "weak_foot": 4, "type": "HERO", "price": 8500000},
-    {"name": "Vinícius Jr.", "position": "LW", "ovr": 107, "team": "Real Madrid", "league": "La Liga", "nationality": "Brazil",
-     "pace": 97, "shooting": 87, "passing": 81, "dribbling": 95, "defending": 30, "physical": 74,
-     "skill_moves": 5, "weak_foot": 4, "type": "HERO", "price": 9000000},
-    {"name": "Kylian Mbappé", "position": "ST", "ovr": 107, "team": "Real Madrid", "league": "La Liga", "nationality": "France",
-     "pace": 99, "shooting": 94, "passing": 83, "dribbling": 95, "defending": 39, "physical": 83,
-     "skill_moves": 5, "weak_foot": 4, "type": "HERO", "price": 9500000},
-    {"name": "Erling Haaland", "position": "ST", "ovr": 107, "team": "Man City", "league": "Premier League", "nationality": "Norway",
-     "pace": 89, "shooting": 97, "passing": 71, "dribbling": 81, "defending": 45, "physical": 97,
-     "skill_moves": 3, "weak_foot": 3, "type": "HERO", "price": 8800000},
-    {"name": "Jamal Musiala", "position": "CAM", "ovr": 106, "team": "Bayern München", "league": "Bundesliga", "nationality": "Germany",
-     "pace": 88, "shooting": 84, "passing": 87, "dribbling": 93, "defending": 60, "physical": 76,
-     "skill_moves": 4, "weak_foot": 3, "type": "HERO", "price": 7500000},
-    {"name": "Bukayo Saka", "position": "RW", "ovr": 106, "team": "Arsenal", "league": "Premier League", "nationality": "England",
-     "pace": 90, "shooting": 84, "passing": 85, "dribbling": 90, "defending": 64, "physical": 74,
-     "skill_moves": 4, "weak_foot": 4, "type": "HERO", "price": 7000000},
-    {"name": "Virgil van Dijk", "position": "CB", "ovr": 107, "team": "Liverpool", "league": "Premier League", "nationality": "Netherlands",
-     "pace": 78, "shooting": 63, "passing": 76, "dribbling": 72, "defending": 97, "physical": 94,
-     "skill_moves": 2, "weak_foot": 4, "type": "HERO", "price": 7200000},
-    {"name": "Trent Alexander-Arnold", "position": "RB", "ovr": 106, "team": "Real Madrid", "league": "La Liga", "nationality": "England",
-     "pace": 84, "shooting": 78, "passing": 93, "dribbling": 85, "defending": 79, "physical": 75,
-     "skill_moves": 3, "weak_foot": 4, "type": "HERO", "price": 6800000},
-    {"name": "Cole Palmer", "position": "CAM", "ovr": 106, "team": "Chelsea", "league": "Premier League", "nationality": "England",
-     "pace": 83, "shooting": 87, "passing": 89, "dribbling": 91, "defending": 52, "physical": 72,
-     "skill_moves": 4, "weak_foot": 4, "type": "HERO", "price": 7000000},
-    {"name": "Lamine Yamal", "position": "RW", "ovr": 105, "team": "Barcelona", "league": "La Liga", "nationality": "Spain",
-     "pace": 92, "shooting": 82, "passing": 84, "dribbling": 94, "defending": 30, "physical": 66,
-     "skill_moves": 4, "weak_foot": 3, "type": "HERO", "price": 6500000},
-    {"name": "Pedri", "position": "CM", "ovr": 106, "team": "Barcelona", "league": "La Liga", "nationality": "Spain",
-     "pace": 79, "shooting": 78, "passing": 91, "dribbling": 91, "defending": 73, "physical": 72,
-     "skill_moves": 4, "weak_foot": 3, "type": "HERO", "price": 6800000},
-    {"name": "Rodri", "position": "CDM", "ovr": 107, "team": "Man City", "league": "Premier League", "nationality": "Spain",
-     "pace": 73, "shooting": 75, "passing": 89, "dribbling": 83, "defending": 94, "physical": 87,
-     "skill_moves": 3, "weak_foot": 4, "type": "HERO", "price": 7000000},
-    {"name": "Mohamed Salah", "position": "RW", "ovr": 106, "team": "Liverpool", "league": "Premier League", "nationality": "Egypt",
-     "pace": 94, "shooting": 90, "passing": 82, "dribbling": 93, "defending": 44, "physical": 79,
-     "skill_moves": 4, "weak_foot": 3, "type": "HERO", "price": 7500000},
-    {"name": "Harry Kane", "position": "ST", "ovr": 106, "team": "Bayern München", "league": "Bundesliga", "nationality": "England",
-     "pace": 74, "shooting": 95, "passing": 84, "dribbling": 84, "defending": 48, "physical": 90,
-     "skill_moves": 3, "weak_foot": 3, "type": "HERO", "price": 7200000},
-    {"name": "Kevin De Bruyne", "position": "CM", "ovr": 107, "team": "Man City", "league": "Premier League", "nationality": "Belgium",
-     "pace": 76, "shooting": 87, "passing": 97, "dribbling": 88, "defending": 65, "physical": 84,
-     "skill_moves": 4, "weak_foot": 5, "type": "HERO", "price": 7800000},
-    {"name": "Robert Lewandowski", "position": "ST", "ovr": 106, "team": "Barcelona", "league": "La Liga", "nationality": "Poland",
-     "pace": 78, "shooting": 96, "passing": 81, "dribbling": 86, "defending": 42, "physical": 87,
-     "skill_moves": 4, "weak_foot": 4, "type": "HERO", "price": 7000000},
-    {"name": "Alisson Becker", "position": "GK", "ovr": 107, "team": "Liverpool", "league": "Premier League", "nationality": "Brazil",
-     "pace": 62, "shooting": 42, "passing": 68, "dribbling": 52, "defending": 98, "physical": 82,
-     "skill_moves": 1, "weak_foot": 3, "type": "HERO", "price": 6500000},
-    {"name": "Thibaut Courtois", "position": "GK", "ovr": 107, "team": "Real Madrid", "league": "La Liga", "nationality": "Belgium",
-     "pace": 65, "shooting": 44, "passing": 70, "dribbling": 54, "defending": 98, "physical": 92,
-     "skill_moves": 1, "weak_foot": 3, "type": "HERO", "price": 6500000},
+# ══════════════════════════════════════════════════
+#  DATA
+# ══════════════════════════════════════════════════
 
-    # --- YULDUZ O'YINCHILAR ---
-    {"name": "Marcus Rashford", "position": "LW", "ovr": 104, "team": "Man Utd", "league": "Premier League", "nationality": "England",
-     "pace": 95, "shooting": 83, "passing": 76, "dribbling": 89, "defending": 40, "physical": 80,
-     "skill_moves": 3, "weak_foot": 3, "type": "GOLD", "price": 4500000},
-    {"name": "Phil Foden", "position": "CAM", "ovr": 104, "team": "Man City", "league": "Premier League", "nationality": "England",
-     "pace": 84, "shooting": 85, "passing": 88, "dribbling": 90, "defending": 54, "physical": 68,
-     "skill_moves": 4, "weak_foot": 4, "type": "GOLD", "price": 4800000},
-    {"name": "Bruno Fernandes", "position": "CAM", "ovr": 104, "team": "Man Utd", "league": "Premier League", "nationality": "Portugal",
-     "pace": 77, "shooting": 84, "passing": 92, "dribbling": 87, "defending": 64, "physical": 75,
-     "skill_moves": 4, "weak_foot": 4, "type": "GOLD", "price": 4500000},
-    {"name": "Florian Wirtz", "position": "CAM", "ovr": 105, "team": "Bayer Leverkusen", "league": "Bundesliga", "nationality": "Germany",
-     "pace": 82, "shooting": 83, "passing": 90, "dribbling": 92, "defending": 58, "physical": 74,
-     "skill_moves": 4, "weak_foot": 4, "type": "GOLD", "price": 5500000},
-    {"name": "Gavi", "position": "CM", "ovr": 104, "team": "Barcelona", "league": "La Liga", "nationality": "Spain",
-     "pace": 83, "shooting": 78, "passing": 89, "dribbling": 89, "defending": 78, "physical": 74,
-     "skill_moves": 4, "weak_foot": 3, "type": "GOLD", "price": 4500000},
-    {"name": "Dani Carvajal", "position": "RB", "ovr": 104, "team": "Real Madrid", "league": "La Liga", "nationality": "Spain",
-     "pace": 82, "shooting": 69, "passing": 84, "dribbling": 83, "defending": 91, "physical": 82,
-     "skill_moves": 3, "weak_foot": 3, "type": "GOLD", "price": 4200000},
-    {"name": "Alphonso Davies", "position": "LB", "ovr": 104, "team": "Bayern München", "league": "Bundesliga", "nationality": "Canada",
-     "pace": 97, "shooting": 69, "passing": 82, "dribbling": 87, "defending": 84, "physical": 78,
-     "skill_moves": 3, "weak_foot": 3, "type": "GOLD", "price": 4500000},
-    {"name": "Ruben Dias", "position": "CB", "ovr": 105, "team": "Man City", "league": "Premier League", "nationality": "Portugal",
-     "pace": 79, "shooting": 56, "passing": 75, "dribbling": 70, "defending": 95, "physical": 91,
-     "skill_moves": 2, "weak_foot": 3, "type": "GOLD", "price": 4800000},
-    {"name": "William Saliba", "position": "CB", "ovr": 104, "team": "Arsenal", "league": "Premier League", "nationality": "France",
-     "pace": 82, "shooting": 52, "passing": 74, "dribbling": 69, "defending": 94, "physical": 88,
-     "skill_moves": 2, "weak_foot": 3, "type": "GOLD", "price": 4500000},
-    {"name": "Antony", "position": "RW", "ovr": 103, "team": "Man Utd", "league": "Premier League", "nationality": "Brazil",
-     "pace": 91, "shooting": 81, "passing": 74, "dribbling": 87, "defending": 34, "physical": 74,
-     "skill_moves": 5, "weak_foot": 3, "type": "GOLD", "price": 3500000},
-    {"name": "Eduardo Camavinga", "position": "CM", "ovr": 103, "team": "Real Madrid", "league": "La Liga", "nationality": "France",
-     "pace": 83, "shooting": 73, "passing": 83, "dribbling": 84, "defending": 82, "physical": 81,
-     "skill_moves": 4, "weak_foot": 3, "type": "GOLD", "price": 3800000},
-    {"name": "Fede Valverde", "position": "CM", "ovr": 104, "team": "Real Madrid", "league": "La Liga", "nationality": "Uruguay",
-     "pace": 84, "shooting": 80, "passing": 84, "dribbling": 86, "defending": 83, "physical": 87,
-     "skill_moves": 3, "weak_foot": 4, "type": "GOLD", "price": 4200000},
-    {"name": "Rasmus Hojlund", "position": "ST", "ovr": 103, "team": "Man Utd", "league": "Premier League", "nationality": "Denmark",
-     "pace": 88, "shooting": 86, "passing": 70, "dribbling": 82, "defending": 38, "physical": 87,
-     "skill_moves": 3, "weak_foot": 3, "type": "GOLD", "price": 3500000},
-    {"name": "Ousmane Dembele", "position": "RW", "ovr": 104, "team": "PSG", "league": "Ligue 1", "nationality": "France",
-     "pace": 95, "shooting": 82, "passing": 81, "dribbling": 93, "defending": 38, "physical": 75,
-     "skill_moves": 4, "weak_foot": 3, "type": "GOLD", "price": 4300000},
-    {"name": "Achraf Hakimi", "position": "RB", "ovr": 104, "team": "PSG", "league": "Ligue 1", "nationality": "Morocco",
-     "pace": 95, "shooting": 71, "passing": 82, "dribbling": 86, "defending": 86, "physical": 80,
-     "skill_moves": 3, "weak_foot": 4, "type": "GOLD", "price": 4200000},
-    {"name": "Leandro Trossard", "position": "LW", "ovr": 103, "team": "Arsenal", "league": "Premier League", "nationality": "Belgium",
-     "pace": 84, "shooting": 83, "passing": 81, "dribbling": 85, "defending": 52, "physical": 70,
-     "skill_moves": 4, "weak_foot": 4, "type": "GOLD", "price": 3200000},
-    {"name": "Ferran Torres", "position": "LW", "ovr": 102, "team": "Barcelona", "league": "La Liga", "nationality": "Spain",
-     "pace": 91, "shooting": 82, "passing": 77, "dribbling": 84, "defending": 40, "physical": 72,
-     "skill_moves": 3, "weak_foot": 4, "type": "GOLD", "price": 2800000},
-    {"name": "Dominik Szoboszlai", "position": "CM", "ovr": 103, "team": "Liverpool", "league": "Premier League", "nationality": "Hungary",
-     "pace": 79, "shooting": 82, "passing": 84, "dribbling": 85, "defending": 73, "physical": 82,
-     "skill_moves": 3, "weak_foot": 4, "type": "GOLD", "price": 3500000},
-    {"name": "Sandro Tonali", "position": "CM", "ovr": 103, "team": "Newcastle", "league": "Premier League", "nationality": "Italy",
-     "pace": 75, "shooting": 78, "passing": 85, "dribbling": 82, "defending": 84, "physical": 83,
-     "skill_moves": 3, "weak_foot": 3, "type": "GOLD", "price": 3400000},
-    {"name": "Gabriel Martinelli", "position": "LW", "ovr": 103, "team": "Arsenal", "league": "Premier League", "nationality": "Brazil",
-     "pace": 95, "shooting": 83, "passing": 76, "dribbling": 87, "defending": 50, "physical": 80,
-     "skill_moves": 3, "weak_foot": 3, "type": "GOLD", "price": 3500000},
-    {"name": "Goncalo Ramos", "position": "ST", "ovr": 103, "team": "PSG", "league": "Ligue 1", "nationality": "Portugal",
-     "pace": 82, "shooting": 88, "passing": 73, "dribbling": 82, "defending": 35, "physical": 80,
-     "skill_moves": 3, "weak_foot": 4, "type": "GOLD", "price": 3300000},
-    {"name": "Kim Min-jae", "position": "CB", "ovr": 104, "team": "Bayern München", "league": "Bundesliga", "nationality": "South Korea",
-     "pace": 82, "shooting": 52, "passing": 70, "dribbling": 66, "defending": 94, "physical": 94,
-     "skill_moves": 2, "weak_foot": 3, "type": "GOLD", "price": 4000000},
-    {"name": "Antoine Griezmann", "position": "CAM", "ovr": 104, "team": "Atletico Madrid", "league": "La Liga", "nationality": "France",
-     "pace": 80, "shooting": 88, "passing": 85, "dribbling": 88, "defending": 57, "physical": 76,
-     "skill_moves": 4, "weak_foot": 4, "type": "GOLD", "price": 4500000},
-]
-
-# --- FORMATSIYALAR ---
-FORMATIONS = {
-    "4-3-3 Holding": {
-        "tier": "S",
-        "description": "Klassik hujum formatsiyasi. 3 ta winger bilan tez hujumlar.",
-        "positions": ["GK", "RB", "CB", "CB", "LB", "CDM", "CM", "CM", "RW", "ST", "LW"],
-        "pros": ["Tez kontr-hujumlar", "3 ta hujumchi", "O'rtamiyonni nazorat qilish"],
-        "cons": ["CDM ustiga yuklanadi", "Yon tomonlarda zaif"],
-        "style": "Hujum",
-        "best_for": "VS Attack va Head-to-Head",
-        "meta_rating": 95,
-        "difficulty": "O'rta"
-    },
-    "4-2-3-1 Narrow": {
-        "tier": "S",
-        "description": "O'rtamiyonni egallash uchun eng yaxshi. CAM markazda ijodiy o'yin.",
-        "positions": ["GK", "RB", "CB", "CB", "LB", "CDM", "CDM", "RAM", "CAM", "LAM", "ST"],
-        "pros": ["O'rtamiyonni hukmronlik", "Ikki CDM himoyasi", "CAM erkin"],
-        "cons": ["Keng tomonga zaiif", "Qanotlar yo'q"],
-        "style": "Muvozanat",
-        "best_for": "Division Rivals",
-        "meta_rating": 93,
-        "difficulty": "O'rta"
-    },
-    "3-5-2": {
-        "tier": "S",
-        "description": "2 ta striker + kuchli o'rtamiyonga ega. Hozirgi META formatsiyasi.",
-        "positions": ["GK", "CB", "CB", "CB", "RM", "CM", "CDM", "CDM", "LM", "ST", "ST"],
-        "pros": ["3 ta himoyachi mustahkam", "LM/RM ilgari itariladi", "2 ta striker xavfli"],
-        "cons": ["Full-back yo'q", "Keng kontrga zaif"],
-        "style": "Muvozanat",
-        "best_for": "Barcha rejimlar",
-        "meta_rating": 97,
-        "difficulty": "Qiyin"
-    },
-    "4-1-2-1-2 Narrow": {
-        "tier": "S",
-        "description": "Markaziy o'yin. Tor ammo kuchli hujum chiziqli.",
-        "positions": ["GK", "RB", "CB", "CB", "LB", "CDM", "CM", "CM", "CAM", "ST", "ST"],
-        "pros": ["2 ta striker xavfli", "CAM ijodiy markaz", "CDM himoya qiladi"],
-        "cons": ["Winger yo'q", "Keng hujumlarga zaif"],
-        "style": "Hujum",
-        "best_for": "VS Attack",
-        "meta_rating": 91,
-        "difficulty": "O'rta"
-    },
-    "4-4-2": {
-        "tier": "A",
-        "description": "Klassik va muvozanatli formatsiya. Boshlang'ich o'yinchilar uchun ideal.",
-        "positions": ["GK", "RB", "CB", "CB", "LB", "RM", "CM", "CM", "LM", "ST", "ST"],
-        "pros": ["Muvozanatli", "Keng qanotlar", "Oson tushuniladi"],
-        "cons": ["Hozirgi META uchun kuchsiz", "O'rtamiyonda bittaga kam"],
-        "style": "Muvozanat",
-        "best_for": "Yangi boshlovchilar",
-        "meta_rating": 82,
-        "difficulty": "Oson"
-    },
-    "4-3-2-1": {
-        "tier": "A",
-        "description": "Xmas daraxti formatsiyasi. Qalinlashtirilgan o'rtamiyonli.",
-        "positions": ["GK", "RB", "CB", "CB", "LB", "CM", "CM", "CM", "RAF", "LAF", "ST"],
-        "pros": ["O'rtamiyonda kuchli", "ST ga ko'p pas"],
-        "cons": ["Keng zaif", "RM/LM yo'q"],
-        "style": "Muvozanat",
-        "best_for": "VS Attack",
-        "meta_rating": 85,
-        "difficulty": "O'rta"
-    },
-    "4-2-4": {
-        "tier": "B",
-        "description": "Ultra hujumchan. 4 ta hujumchi bilan xavfli ammo himoyasiz.",
-        "positions": ["GK", "RB", "CB", "CB", "LB", "CDM", "CDM", "RW", "ST", "ST", "LW"],
-        "pros": ["4 ta hujumchi", "Tezkor hujumlar", "Ko'p gol imkoniyati"],
-        "cons": ["Juda himoyasiz", "Kontr-hujumlarga zaif"],
-        "style": "Super Hujum",
-        "best_for": "Tajribali o'yinchilar",
-        "meta_rating": 75,
-        "difficulty": "Juda qiyin"
-    },
-    "5-3-2": {
-        "tier": "A",
-        "description": "5 ta himoyachi bilan mustahkam mudofaa. Kontr-hujum taktikasi.",
-        "positions": ["GK", "RWB", "CB", "CB", "CB", "LWB", "CM", "CM", "CM", "ST", "ST"],
-        "pros": ["Juda mustahkam himoya", "RWB/LWB hujumda ham yordam beradi"],
-        "cons": ["Kam hujum imkoniyati", "O'rtamiyonda bosim kerak"],
-        "style": "Himoya",
-        "best_for": "Manager Mode",
-        "meta_rating": 80,
-        "difficulty": "O'rta"
-    },
-    "4-3-3 Attack": {
-        "tier": "A",
-        "description": "Hujumchan 4-3-3. Keng qanotlar bilan kross o'yini.",
-        "positions": ["GK", "RB", "CB", "CB", "LB", "CM", "CM", "CM", "RW", "ST", "LW"],
-        "pros": ["Keng qanotlar", "Ko'p kross imkoniyati", "3 ta midfield"],
-        "cons": ["CDM yo'q", "Kontr-hujumlarga zaif"],
-        "style": "Hujum",
-        "best_for": "VS Attack",
-        "meta_rating": 88,
-        "difficulty": "O'rta"
-    },
-}
-
-# --- O'YIN REJIMLARI ---
-GAME_MODES = {
-    "VS Attack": {
-        "icon": "⚔️",
-        "description": "Asinxron PvP rejimi. Faqat hujum bosqichlarini o'ynaysiz.",
-        "tips": [
-            "Ikki CDM bilan kuchli formatsiya tanlang",
-            "Tez wingerlarga ega bo'ling",
-            "1-on-1 dribbling ustida mashq qiling",
-            "Passing zanjirlarini takomillashtiring",
-            "OVR oshirishga harakat qiling"
-        ],
-        "rewards": "Diamonds, Skill Boosts, Player Packs",
-        "seasons": "Haftalik mavsumlar",
-        "difficulty": "O'rta"
-    },
-    "Head to Head": {
-        "icon": "🥊",
-        "description": "To'liq real vaqt PvP. 90 daqiqalik to'liq o'yin.",
-        "tips": [
-            "3-5-2 yoki 4-2-3-1 ishlating",
-            "Taktik o'zgarishlarga tayyor bo'ling",
-            "Himoyada CDM/CB ni kuzating",
-            "Skill moves kam ishlating",
-            "Corner kick strategiyasini o'rganing"
-        ],
-        "rewards": "Division points, Weekly rewards, Event coins",
-        "seasons": "Division tizimi",
-        "difficulty": "Qiyin"
-    },
-    "Manager Mode": {
-        "icon": "🧠",
-        "description": "Taktik boshqaruv. O'yinchi harakatlari emas, jamoa taktikasi.",
-        "tips": [
-            "Futbolchilar ko'rsatkichlariga e'tibor bering",
-            "Chemistry muhim",
-            "To'g'ri pozitsiyalash",
-            "Formatsiyani raqibga qarab o'zgartiring",
-            "Player traits ni ko'rib chiqing"
-        ],
-        "rewards": "Manager tokens, Elite packs",
-        "seasons": "Monthly seasons",
-        "difficulty": "O'rta"
-    },
-    "Club Challenge": {
-        "icon": "🏆",
-        "description": "Litsenziyalangan klublar bilan o'ynash. EPL, La Liga, UCL.",
-        "tips": [
-            "Klub o'yinchilarining kuchli tomonlarini o'rganing",
-            "Har bir liganing o'ziga xos o'yin uslubi bor",
-            "Bonus OVR beradigan o'yinchilardan foydalaning",
-            "Event o'yinchilarni to'plang"
-        ],
-        "rewards": "Club tokens, Exclusive player cards",
-        "seasons": "Event-based",
-        "difficulty": "O'rta"
-    },
-    "Division Rivals": {
-        "icon": "🎯",
-        "description": "Darajali reyting tizimi. Yulduz tizimi bilan yangilangan.",
-        "tips": [
-            "Haftada kamida 5 o'yin o'ynang",
-            "Yuqori division = ko'p mukofot",
-            "Lose streakdan keyin tanaffus oling",
-            "Meta formatsiyalardan foydalaning"
-        ],
-        "rewards": "Division tokens, Pack rewards, Special cards",
-        "seasons": "Haftalik divisions",
-        "difficulty": "Juda qiyin"
-    },
-    "Tournament Mode": {
-        "icon": "🌍",
-        "description": "Real hayotdagi turnirlar: UCL, Euro, World Cup.",
-        "tips": [
-            "Turnirga mos o'yinchilar to'plang",
-            "Group stage dan ehtiyot bo'ling",
-            "Knockout roundda taktik o'zgartiring",
-            "Special event o'yinchilarni ishlating"
-        ],
-        "rewards": "Tournament trophies, Special packs, Exclusive players",
-        "seasons": "Real-world event based",
-        "difficulty": "O'rta"
-    },
-    "Football Center": {
-        "icon": "📡",
-        "description": "Real hayot statistikasi asosida OVR yangilanadi.",
-        "tips": [
-            "Team of the Week o'yinchilarini kuzating",
-            "Player of the Month ochko'zlik qiling",
-            "Key Matches natijalarini kuzating",
-            "OVR boost'lardan foydalaning"
-        ],
-        "rewards": "Live OVR updates, TOTW cards",
-        "seasons": "Haftamahal yangilanadi",
-        "difficulty": "Oson"
-    },
-    "Leagues": {
-        "icon": "🤝",
-        "description": "100 nafargacha o'yinchi bilan hamkorlik o'yini.",
-        "tips": [
-            "Faol liga a'zolari bilan kiriting",
-            "Seasonal quests ni bajarish",
-            "League vs League turnirlarida g'alaba qozonish",
-            "League admin vositalaridan foydalaning"
-        ],
-        "rewards": "League coins, Co-op rewards, Special players",
-        "seasons": "Mavsumiy",
-        "difficulty": "Oson"
-    },
-}
-
-# --- LIGALAR ---
-LEAGUES = {
-    "Premier League": {"country": "England", "teams": 20, "top_team": "Man City", "color": "#3D195B"},
-    "La Liga": {"country": "Spain", "teams": 20, "top_team": "Real Madrid", "color": "#FF6600"},
-    "Bundesliga": {"country": "Germany", "teams": 18, "top_team": "Bayern München", "color": "#D20515"},
-    "Serie A": {"country": "Italy", "teams": 20, "top_team": "Inter Milan", "color": "#024494"},
-    "Ligue 1": {"country": "France", "teams": 18, "top_team": "PSG", "color": "#003189"},
-    "Champions League": {"country": "Europe", "teams": 32, "top_team": "Real Madrid", "color": "#0C2461"},
-    "ICON": {"country": "Legends", "teams": 0, "top_team": "Various", "color": "#8B6914"},
-    "HERO": {"country": "Heroes", "teams": 0, "top_team": "Various", "color": "#6B2E8E"},
-}
-
-# --- HODISALAR ---
-EVENTS = [
-    {"name": "Glorious Eras", "status": "Active", "type": "ICON Event",
-     "description": "Real Madrid, Liverpool, Bayern va Juventus ICON o'yinchilari",
-     "rewards": "ICON player cards, Special packs", "end_date": "2025-12-18", "icon": "🌟"},
-    {"name": "Team of the Week", "status": "Active", "type": "Weekly",
-     "description": "Haftalik real hayot statistikasi asosida eng yaxshi 11 ta o'yinchi",
-     "rewards": "TOTW cards, Boosts", "end_date": "Ongoing", "icon": "📊"},
-    {"name": "Club Challenge Season", "status": "Active", "type": "Seasonal",
-     "description": "Premier League, La Liga va UCL klublari bilan musobaqa",
-     "rewards": "Club tokens, Exclusive kits", "end_date": "Season end", "icon": "🏟️"},
-    {"name": "Champions League Event", "status": "Coming Soon", "type": "Tournament",
-     "description": "UEFA Champions League turniriga bag'ishlangan maxsus hodisa",
-     "rewards": "UCL trophy, Exclusive players", "end_date": "2026-02-01", "icon": "🏆"},
-    {"name": "Aqua vs Inferno", "status": "Seasonal", "type": "Team Event",
-     "description": "Ikki jamoaga bo'linib musobaqa. Maxsus ko'rinishdagi o'yinchilar.",
-     "rewards": "Special themed players, Exclusive packs", "end_date": "Seasonal", "icon": "🔥"},
-    {"name": "Daily Training", "status": "Active", "type": "Daily",
-     "description": "Kunlik vazifalar va maqsadlar bajarish",
-     "rewards": "XP, Training tokens, Skill boosts", "end_date": "Daily reset", "icon": "💪"},
-    {"name": "Division Rivals Season", "status": "Active", "type": "Weekly",
-     "description": "Haftalik Division Rivals mavsumi",
-     "rewards": "Division tokens, Pack rewards", "end_date": "Weekly reset", "icon": "⚡"},
-    {"name": "MLS Live Games", "status": "Past", "type": "Live Event",
-     "description": "MLS o'yinlarini jonli tomosha qilish va mukofotlar",
-     "rewards": "MLS players, Coins", "end_date": "2025-09-27", "icon": "📺"},
-]
-
-# --- MASLAHATLAR ---
-TIPS_AND_TRICKS = {
-    "Yangi boshlovchilar": [
-        "🎯 Avvalo Daily Quests ni bajaring - bu tekin resurslar beradi",
-        "💎 Diamonds ni faqat muhim narsalarga sarflang",
-        "📦 Pack ochishda shoshilmang - Events paytida oching",
-        "⚽ Bir formatsiyada qoling va uni to'liq o'rganing",
-        "🤝 Ligaga kiring - cooperative bonuslar muhim",
-        "📈 OVR oshirishga e'tibor bering, kozmetikaga emas",
-        "🏃 Pace (tezlik) eng muhim stat - tez o'yinchilar tanlang",
-        "🔄 Chemistry ni to'g'rilang - bir millat/liga o'yinchilar",
-    ],
-    "O'rta daraja": [
-        "🧪 Formatsiyani o'zgartirib ko'ring - 3-5-2 hozir META",
-        "💰 Transfer marketda sotib oling - pack'dan ko'ra arzonroq",
-        "📊 Football Center'ni kuzating - TOTW o'yinchilar qimmatli",
-        "🎮 VS Attack'da CDM bilan o'yinchi blok qilishni o'rganing",
-        "🌟 ICON o'yinchilarni maqsad qiling - eng yaxshi karta turi",
-        "📋 Player traits ni o'qing - Long Shot, Dives Into Tackles muhim",
-        "🔁 Rank Up tizimini tushuning - base OVR dan yuqoriga ko'taring",
-        "⚔️ H2H'da Counter-attack taktikasi ishlating",
-    ],
-    "Ilg'or darajadagi": [
-        "💡 Alternativ pozitsiyalar OVR boost beradi - RM ni CM'da o'ynating",
-        "🎯 Penalty spot'larni yodlang - oldindan ko'rsatmasdan ur",
-        "🔧 Taktik O'zgarishlarni real vaqtda qilishni o'rganing",
-        "📈 Player ratings real hayot bilan o'zgaradi - Football Center tomosha",
-        "🎭 Event o'yinchilari kelajakda OVR boostga ega bo'lishi mumkin",
-        "💎 Diamond bundles'ni sale paytida oling",
-        "🏆 Division Rivals'da Elite+/FC Champion maqsad qiling",
-        "🤝 League vs League'da 100% ishtirok eting",
+# --- ACTUAL TEAM (from screenshots) ---
+MY_TEAM = {
+    "name": "MY TEAM",
+    "club": "Real Madrid",
+    "club_emoji": "👑",
+    "ovr": 121,
+    "formation": "3-4-3 Diamond",
+    "coins": 62_760_000_000,
+    "badges": ["🥇", "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "🔷"],
+    "players": [
+        # GK
+        {"name": "MUSLERA", "pos": "GK", "ovr": 119, "rank": 30, "type": "gold", "emoji": "🧤", "nationality": "🇺🇾", "club": "Galatasaray"},
+        # CB x3
+        {"name": "MARQUINHOS", "pos": "CB", "ovr": 117, "rank": 29, "type": "hero", "emoji": "🛡️", "nationality": "🇧🇷", "club": "PSG"},
+        {"name": "NESTA",      "pos": "CB", "ovr": 120, "rank": 30, "type": "icon", "emoji": "🛡️", "nationality": "🇮🇹", "club": "ICON"},
+        {"name": "SALIBA",     "pos": "CB", "ovr": 121, "rank": 30, "type": "hero", "emoji": "🛡️", "nationality": "🇫🇷", "club": "Arsenal"},
+        # MID x4
+        {"name": "HAGI",       "pos": "LM", "ovr": 120, "rank": 30, "type": "icon", "emoji": "🌟", "nationality": "🇷🇴", "club": "ICON"},
+        {"name": "MCTOMINAY",  "pos": "CDM","ovr": 121, "rank": 30, "type": "special","emoji": "💜","nationality": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "club": "Napoli"},
+        {"name": "OLISE",      "pos": "CAM","ovr": 122, "rank": 30, "type": "special","emoji": "🔥","nationality": "🇫🇷", "club": "Bayern"},
+        {"name": "BECKHAM",    "pos": "RM", "ovr": 120, "rank": 30, "type": "icon", "emoji": "⚽", "nationality": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "ICON"},
+        # ATT x3
+        {"name": "HAZARD",     "pos": "LW", "ovr": 120, "rank": 30, "type": "icon", "emoji": "💛", "nationality": "🇧🇪", "club": "ICON"},
+        {"name": "OWEN",       "pos": "ST", "ovr": 120, "rank": 30, "type": "icon", "emoji": "🎯", "nationality": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "ICON"},
+        {"name": "L.YAMAL",    "pos": "RW", "ovr": 121, "rank": 30, "type": "special","emoji": "⭐","nationality": "🇪🇸", "club": "Barcelona"},
     ]
 }
 
-# --- STATISTIKA MA'LUMOTLARI ---
-def get_global_stats():
+# --- TRANSFER MARKET PLAYERS ---
+MARKET_PLAYERS = [
+    {"name": "DOUE",           "pos": "LW", "ovr": 117, "type": "special", "price": 4_670_000_000, "low": 4_430_000_000, "high": 4_900_000_000, "emoji": "💫", "nat": "🇫🇷", "club": "PSG"},
+    {"name": "AFONSO MOREIRA", "pos": "LM", "ovr": 116, "type": "hero",    "price": 2_410_000_000, "low": 2_200_000_000, "high": 2_600_000_000, "emoji": "⚡", "nat": "🇵🇹", "club": "Emirates"},
+    {"name": "BENZEMA",        "pos": "ST", "ovr": 116, "type": "hero",    "price": 2_460_000_000, "low": 2_300_000_000, "high": 2_700_000_000, "emoji": "🎯", "nat": "🇫🇷", "club": "Al-Ittihad"},
+    {"name": "DONNARUMMA",     "pos": "GK", "ovr": 116, "type": "special", "price": 3_050_000_000, "low": 2_800_000_000, "high": 3_200_000_000, "emoji": "🧤", "nat": "🇮🇹", "club": "PSG"},
+    {"name": "RASHFORD",       "pos": "LW", "ovr": 116, "type": "special", "price": 4_670_000_000, "low": 4_400_000_000, "high": 4_900_000_000, "emoji": "🌪️", "nat": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "Man Utd"},
+    {"name": "R.CARVALHO",     "pos": "CB", "ovr": 116, "type": "icon",    "price": 5_350_000_000, "low": 5_000_000_000, "high": 5_700_000_000, "emoji": "🛡️", "nat": "🇵🇹", "club": "ICON"},
+    {"name": "ZAMORANO",       "pos": "ST", "ovr": 116, "type": "icon",    "price": 2_250_000_000, "low": 2_100_000_000, "high": 2_400_000_000, "emoji": "🔟", "nat": "🇨🇱", "club": "ICON"},
+    {"name": "BARESI",         "pos": "CB", "ovr": 115, "type": "icon",    "price": 4_230_000_000, "low": 3_900_000_000, "high": 4_600_000_000, "emoji": "🏆", "nat": "🇮🇹", "club": "ICON"},
+    {"name": "BARNES",         "pos": "LW", "ovr": 115, "type": "hero",    "price": 2_450_000_000, "low": 2_200_000_000, "high": 2_700_000_000, "emoji": "⚡", "nat": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "Liverpool"},
+    {"name": "DIAZ",           "pos": "LW", "ovr": 115, "type": "special", "price": 3_470_000_000, "low": 3_200_000_000, "high": 3_700_000_000, "emoji": "🌟", "nat": "🇨🇴", "club": "Bayern"},
+    {"name": "HAALAND",        "pos": "ST", "ovr": 115, "type": "hero",    "price": 4_100_000_000, "low": 3_800_000_000, "high": 4_400_000_000, "emoji": "💪", "nat": "🇳🇴", "club": "Man City"},
+    {"name": "MBAPPE",         "pos": "ST", "ovr": 115, "type": "special", "price": 5_800_000_000, "low": 5_400_000_000, "high": 6_200_000_000, "emoji": "⚡", "nat": "🇫🇷", "club": "Real Madrid"},
+    {"name": "SAKA",           "pos": "RW", "ovr": 114, "type": "hero",    "price": 1_980_000_000, "low": 1_800_000_000, "high": 2_200_000_000, "emoji": "🏃", "nat": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "Arsenal"},
+    {"name": "BELLINGHAM",     "pos": "CM", "ovr": 114, "type": "hero",    "price": 3_200_000_000, "low": 2_900_000_000, "high": 3_500_000_000, "emoji": "💎", "nat": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "Real Madrid"},
+    {"name": "VINICIUS JR",    "pos": "LW", "ovr": 114, "type": "hero",    "price": 2_750_000_000, "low": 2_500_000_000, "high": 3_000_000_000, "emoji": "🌪️", "nat": "🇧🇷", "club": "Real Madrid"},
+]
+
+# --- RESERVES ---
+RESERVES = [
+    {"name": "KANE",       "pos": "ST", "ovr": 119, "type": "hero", "emoji": "🎯", "nat": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "club": "Bayern"},
+    {"name": "DUMFRIES",   "pos": "RB", "ovr": 118, "type": "gold", "emoji": "⚡", "nat": "🇳🇱", "club": "Inter"},
+    {"name": "ROBERTSON",  "pos": "LB", "ovr": 118, "type": "gold", "emoji": "🌟", "nat": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "club": "Liverpool"},
+    {"name": "ALISSON",    "pos": "GK", "ovr": 117, "type": "hero", "emoji": "🧤", "nat": "🇧🇷", "club": "Liverpool"},
+    {"name": "KEANE",      "pos": "CDM","ovr": 117, "type": "icon", "emoji": "🛡️", "nat": "🇮🇪", "club": "ICON"},
+    {"name": "ERIKSEN",    "pos": "CAM","ovr": 114, "type": "gold", "emoji": "🎼", "nat": "🇩🇰", "club": "Wolfsburg"},
+    {"name": "DJENE",      "pos": "CB", "ovr": 112, "type": "gold", "emoji": "💪", "nat": "🇹🇬", "club": "Getafe"},
+    {"name": "FABIANSKI",  "pos": "GK", "ovr": 112, "type": "gold", "emoji": "🧤", "nat": "🇵🇱", "club": "West Ham"},
+    {"name": "KAMADA",     "pos": "CM", "ovr": 112, "type": "gold", "emoji": "🇯🇵", "nat": "🇯🇵", "club": "Dortmund"},
+    {"name": "BAKAMBU",    "pos": "ST", "ovr": 111, "type": "gold", "emoji": "⚽", "nat": "🇨🇩", "club": "Marseille"},
+    {"name": "HALLER",     "pos": "ST", "ovr": 111, "type": "gold", "emoji": "🎯", "nat": "🇨🇮", "club": "Dortmund"},
+]
+
+# --- DRAFT POOLS ---
+DRAFT_POOLS = {
+    "CAPPED LEGENDS": {
+        "hot": True,
+        "ends": "4 Days",
+        "description": "Legendary players from football history",
+        "pool_a": [
+            {"name": "CANNAVARO","pos": "CB","ovr": 117,"type": "icon","emoji": "🛡️","nat": "🇮🇹"},
+            {"name": "COLE",     "pos": "LB","ovr": 117,"type": "icon","emoji": "⚡","nat": "🏴󠁧󠁢󠁥󠁮󠁧󠁿"},
+            {"name": "MARADONA", "pos": "RW","ovr": 117,"type": "icon","emoji": "🤌","nat": "🇦🇷"},
+            {"name": "LAUDRUP",  "pos": "CAM","ovr": 116,"type": "icon","emoji": "🌟","nat": "🇩🇰"},
+            {"name": "DE ROSSI", "pos": "CDM","ovr": 116,"type": "icon","emoji": "💪","nat": "🇮🇹"},
+            {"name": "KEANE",    "pos": "LW", "ovr": 116,"type": "icon","emoji": "🏃","nat": "🇮🇪"},
+        ],
+        "pool_b_guaranteed": 8,
+        "pool_a_guaranteed": 43,
+        "cost_single": 1,
+        "cost_ten": 10,
+    },
+    "RAMADAN": {
+        "hot": False,
+        "ends": "Festive",
+        "description": "Special Ramadan season players",
+        "pool_a": [],
+        "cost_single": 1, "cost_ten": 10,
+    },
+    "WELCOME": {
+        "hot": False,
+        "ends": "Kick Off",
+        "description": "Welcome pack for new players",
+        "pool_a": [],
+        "cost_single": 1, "cost_ten": 10,
+    }
+}
+
+# --- STORE ITEMS ---
+STORE_ITEMS = [
+    {"name": "Player Pack 65-74",  "icon": "📦", "price_coins": 1500,  "price_gems": 15000, "limit": "Weekly: 20", "sale": None,       "type": "featured"},
+    {"name": "FC Draft Voucher",   "icon": "🎫", "price_coins": 200,   "price_gems": 3000,  "limit": None,         "sale": None,       "type": "featured"},
+    {"name": "10 FC Points",       "icon": "🪙", "price_coins": 2000,  "price_gems": 30000, "limit": None,         "sale": None,       "type": "featured"},
+    {"name": "10 FC Points SALE",  "icon": "🪙", "price_coins": 1000,  "price_gems": None,  "limit": "Weekly: 1",  "sale": "50% OFF",  "type": "featured"},
+    {"name": "10 FC Points 20%",   "icon": "🪙", "price_coins": 1600,  "price_gems": None,  "limit": "Daily: 1",   "sale": "20% OFF",  "type": "featured"},
+    {"name": "Daily Voucher",      "icon": "🎫", "price_coins": None,  "price_gems": None,  "limit": "Daily: 1",   "sale": "50% OFF",  "type": "festive"},
+    {"name": "Voucher Bundle Mega","icon": "🎁", "price_coins": None,  "price_gems": None,  "limit": "Purchase: 1","sale": "40% OFF",  "type": "festive"},
+    {"name": "Daily Resource",     "icon": "📦", "price_coins": None,  "price_gems": None,  "limit": "Daily: 1",   "sale": "LIMIT",    "type": "festive"},
+    {"name": "Star Pass Premium",  "icon": "⭐", "price_coins": 5000,  "price_gems": 50000, "limit": None,         "sale": None,       "type": "star_pass"},
+]
+
+# --- EXCHANGE ITEMS ---
+EXCHANGE_ITEMS = {
+    "CAPPED LEGENDS": [
+        {"name": "FC Draft Voucher",         "icon": "🎫", "target": "All Players", "limit": "No Limit",    "desc": "Exchange for draft voucher"},
+        {"name": "Rank Up Point x100",       "icon": "⬆️", "target": "All Players", "limit": "0/10",        "expires": "4 Days", "desc": "Boost rank points"},
+        {"name": "117 OVR CL Player B",      "icon": "👤", "target": "All Players", "limit": "0/1",         "desc": "50% OFF",  "sale": True},
+        {"name": "117 OVR CL Player B x3",   "icon": "👥", "target": "All Players", "limit": "0/3",         "desc": "Regular price"},
+        {"name": "117 OVR CL Selection",     "icon": "🌟", "target": "All Players", "limit": "0/5",         "desc": "Select your player"},
+    ],
+    "TEAM OF THE YEAR 2026": [
+        {"name": "TOTY 26 Player A",         "icon": "🏆", "target": "All Players", "limit": "0/5",  "desc": "Top rated players"},
+        {"name": "TOTY 26 Token",            "icon": "🎖️", "target": "All Players", "limit": "No Limit", "desc": "Exchange token"},
+    ],
+    "RAMADAN": [
+        {"name": "Ramadan Player",           "icon": "🌙", "target": "All Players", "limit": "0/3",  "desc": "Special Ramadan player"},
+    ],
+    "LIVE EVENTS": [
+        {"name": "Live Event Reward",        "icon": "📡", "target": "All Players", "limit": "0/10", "desc": "Complete live events"},
+    ],
+    "RANK UP & TRAINING": [
+        {"name": "26 Phase 2 Token",         "icon": "🔑", "target": "All Items",   "limit": "No Limit", "desc": "Expires: 46 Days", "items_needed": ["Pack A", "Pack B", "Pack C"]},
+        {"name": "Extra Time Token A",       "icon": "⏱️", "target": "108-117 OVR","limit": "0/100,000", "desc": "Refreshes daily"},
+    ]
+}
+
+# --- QUESTS ---
+DAILY_QUESTS = [
+    {"name": "Score 5 Goals",        "icon": "⚽", "reward": "500 Coins",   "progress": 3, "total": 5,   "type": "daily"},
+    {"name": "Win 2 VS Attack",      "icon": "⚔️", "reward": "1 Draft Voucher", "progress": 1, "total": 2, "type": "daily"},
+    {"name": "Complete a Match",     "icon": "🏟️", "reward": "200 Gems",   "progress": 1, "total": 1,   "type": "daily"},
+    {"name": "Use 3 Skill Moves",    "icon": "🔄", "reward": "300 Coins",   "progress": 2, "total": 3,   "type": "daily"},
+    {"name": "Assist 3 Times",       "icon": "🅰️", "reward": "150 Coins",   "progress": 0, "total": 3,   "type": "daily"},
+]
+WEEKLY_QUESTS = [
+    {"name": "Win 10 H2H Matches",   "icon": "🥊", "reward": "5,000 Coins", "progress": 7,  "total": 10,  "type": "weekly"},
+    {"name": "Reach Top 100",        "icon": "📈", "reward": "10 Vouchers", "progress": 1,  "total": 1,   "type": "weekly"},
+    {"name": "Complete 5 Draft",     "icon": "🎫", "reward": "50,000 Coins","progress": 3,  "total": 5,   "type": "weekly"},
+    {"name": "Score 30 Goals",       "icon": "⚽", "reward": "25,000 Coins","progress": 22, "total": 30,  "type": "weekly"},
+]
+
+# --- LEAGUE MEMBERS ---
+LEAGUE_MEMBERS = [
+    {"rank": 1,  "name": "MasterFC",    "ovr": 123, "pts": 9850, "country": "🇧🇷"},
+    {"rank": 2,  "name": "ProPlayer99", "ovr": 122, "pts": 9720, "country": "🇩🇪"},
+    {"rank": 3,  "name": "Somosab",     "ovr": 121, "pts": 9600, "country": "🇺🇿"},
+    {"rank": 4,  "name": "FCLegend",    "ovr": 120, "pts": 9480, "country": "🇫🇷"},
+    {"rank": 5,  "name": "GoalMachine", "ovr": 119, "pts": 9350, "country": "🇪🇸"},
+    {"rank": 6,  "name": "SkillKing",   "ovr": 118, "pts": 9200, "country": "🇦🇷"},
+    {"rank": 7,  "name": "PaceMonster", "ovr": 117, "pts": 9050, "country": "🇵🇹"},
+    {"rank": 8,  "name": "DribblePro",  "ovr": 117, "pts": 8900, "country": "🇮🇹"},
+    {"rank": 9,  "name": "DefenseWall", "ovr": 116, "pts": 8750, "country": "🏴󠁧󠁢󠁥󠁮󠁧󠁿"},
+    {"rank": 10, "name": "MetaMaster",  "ovr": 116, "pts": 8600, "country": "🇳🇱"},
+]
+
+
+# ══════════════════════════════════════════════════
+#  HELPER FUNCTIONS
+# ══════════════════════════════════════════════════
+
+def fmt_price(n):
+    if n >= 1_000_000_000:
+        return f"{n/1_000_000_000:.3f}B"
+    elif n >= 1_000_000:
+        return f"{n/1_000_000:.1f}M"
+    elif n >= 1_000:
+        return f"{n/1_000:.0f}K"
+    return str(n)
+
+def get_card_class(card_type):
     return {
-        "total_players": "19,000+",
-        "total_teams": 690,
-        "total_leagues": 35,
-        "game_modes": 8,
-        "max_ovr": 109,
-        "icon_count": "150+",
-        "monthly_players": "100M+",
-        "platform": "iOS & Android"
-    }
+        "icon":    ("fc-card-icon",    "fc-card-border-icon",    "ovr-icon"),
+        "hero":    ("fc-card-hero",    "fc-card-border-hero",    "ovr-hero"),
+        "gold":    ("fc-card-gold",    "fc-card-border-gold",    "ovr-gold"),
+        "silver":  ("fc-card-silver",  "fc-card-border-silver",  "ovr-silver"),
+        "special": ("fc-card-special", "fc-card-border-special", "ovr-special"),
+    }.get(card_type, ("fc-card-gold", "fc-card-border-gold", "ovr-gold"))
 
-# ═══════════════════════════════════════════════════════════════
-#  YORDAMCHI FUNKSIYALAR
-# ═══════════════════════════════════════════════════════════════
+def get_pos_class(pos):
+    atk = ["ST", "LW", "RW", "CF", "SS"]
+    mid = ["CM", "CDM", "CAM", "LM", "RM", "LAM", "RAM"]
+    dfn = ["CB", "LB", "RB", "LWB", "RWB"]
+    if pos in atk: return "pos-att"
+    if pos in mid: return "pos-mid"
+    if pos in dfn: return "pos-def"
+    return "pos-gk"
 
-def get_ovr_color(ovr):
-    """OVR ga qarab rang qaytaradi"""
-    if ovr >= 109: return "#FFD700"
-    elif ovr >= 107: return "#FF8C00"
-    elif ovr >= 105: return "#9400D3"
-    elif ovr >= 103: return "#0080FF"
-    elif ovr >= 100: return "#00C000"
-    else: return "#808080"
+def get_card_colors(card_type):
+    """Returns (border_color, bg_gradient, ovr_color) for field cards"""
+    return {
+        "icon":    ("#f59e0b", "linear-gradient(145deg,#1a1209,#251a0a)", "#fbbf24"),
+        "hero":    ("#a855f7", "linear-gradient(145deg,#170d24,#1f0f30)", "#d946ef"),
+        "gold":    ("#d97706", "linear-gradient(145deg,#1a1507,#221c08)", "#f59e0b"),
+        "silver":  ("#4b5563", "linear-gradient(145deg,#111318,#161b22)", "#9ca3af"),
+        "special": ("#06b6d4", "linear-gradient(145deg,#071820,#091f28)", "#22d3ee"),
+    }.get(card_type, ("#d97706", "linear-gradient(145deg,#1a1507,#221c08)", "#f59e0b"))
 
-def get_ovr_label(ovr):
-    """OVR ga qarab label qaytaradi"""
-    if ovr >= 109: return "🔱 ELITE"
-    elif ovr >= 107: return "⭐ YULDUZ"
-    elif ovr >= 105: return "💜 LEGEND"
-    elif ovr >= 103: return "💙 GOLD PLUS"
-    elif ovr >= 100: return "💚 GOLD"
-    else: return "⚪ SILVER"
+def render_player_card(player, show_price=False):
+    bg, border, ovr_cls = get_card_class(player["type"])
+    pos_cls = get_pos_class(player["pos"])
+    stars = "⭐" * min(3, (player["ovr"] - 100) // 5 + 1) if player["ovr"] >= 100 else "★"
+    price_html = f'<div class="fc-market-price">🪙 {fmt_price(player.get("price", 0))}</div>' if show_price else ""
+    nat = player.get("nat", player.get("nationality", ""))
+    return f"""
+<div class="fc-card {bg} {border}">
+    <span class="fc-card-pos-badge {pos_cls}">{player['pos']}</span>
+    <span class="fc-card-ovr {ovr_cls}">{player['ovr']}</span>
+    <span class="fc-card-emoji">{player.get('emoji','⚽')}</span>
+    <div class="fc-card-name">{player['name']}</div>
+    <div class="fc-card-club">{nat} {player.get('club','')}</div>
+    <div class="fc-card-rank">{stars}</div>
+    {price_html}
+</div>
+"""
 
-def calculate_team_ovr(players_ovr_list):
-    """Jamoaning umumiy OVR ni hisoblash"""
-    if not players_ovr_list or len(players_ovr_list) == 0:
-        return 0
-    sorted_ovr = sorted(players_ovr_list, reverse=True)
-    # Asosiy 11 ta o'yinchi (yoki mavjud bo'lganlar)
-    main = sorted_ovr[:11]
-    if len(main) == 0:
-        return 0
-    # Oddiy o'rtacha (soddalashtirilgan hisoblash)
-    team_ovr = sum(main) / len(main)
-    return round(team_ovr, 1)
-
-def get_star_display(stars):
-    """Yulduz ko'rinishi"""
-    return "⭐" * stars + "☆" * (5 - stars)
-
-def format_price(price):
-    """Narxni formatlash"""
-    if price >= 1_000_000:
-        return f"{price/1_000_000:.1f}M"
-    elif price >= 1_000:
-        return f"{price/1_000:.0f}K"
-    return str(price)
-
-def get_position_color(pos):
-    """Pozitsiyaga qarab rang"""
-    attackers = ["ST", "LW", "RW", "CAM", "CF", "SS", "LAM", "RAM", "RAF", "LAF"]
-    midfielders = ["CM", "CDM", "CAM", "LM", "RM"]
-    defenders = ["CB", "LB", "RB", "LWB", "RWB"]
-    keepers = ["GK"]
-    if pos in attackers: return "#FF4444"
-    elif pos in midfielders: return "#44FF88"
-    elif pos in defenders: return "#4488FF"
-    elif pos in keepers: return "#FFAA00"
-    return "#FFFFFF"
-
-def simulate_match(team1_ovr, team2_ovr):
-    """Oddiy o'yin simulyatsiyasi"""
-    diff = team1_ovr - team2_ovr
-    # Win probability
-    win_prob = 0.5 + (diff / 200)
-    win_prob = max(0.1, min(0.9, win_prob))
-
-    result = random.random()
-    if result < win_prob:
-        outcome = "G'ALABA"
-        goals_for = random.randint(1, 5)
-        goals_against = random.randint(0, goals_for - 1)
-    elif result < win_prob + 0.15:
-        outcome = "DURRANG"
-        goals_for = random.randint(0, 3)
-        goals_against = goals_for
-    else:
-        outcome = "MAG'LUBIYAT"
-        goals_against = random.randint(1, 5)
-        goals_for = random.randint(0, goals_against - 1)
-
-    return outcome, goals_for, goals_against
-
-# ═══════════════════════════════════════════════════════════════
-#  ASOSIY NAVIGATSIYA
-# ═══════════════════════════════════════════════════════════════
-
-# Sidebar
-with st.sidebar:
-    st.markdown("""
-    <div style='text-align:center; padding: 20px 0;'>
-        <div style='font-size: 50px;'>⚽</div>
-        <div style='font-size: 22px; font-weight: bold; color: #00FF88;'>FC Mobile 26</div>
-        <div style='font-size: 13px; color: #aaaaaa;'>Companion App</div>
-        <div style='height: 2px; background: linear-gradient(90deg, transparent, #00B050, transparent); margin: 10px 0;'></div>
+def render_field_card(player):
+    bc, bg, ovr_c = get_card_colors(player["type"])
+    pos_cls = get_pos_class(player["pos"])
+    pos_colors = {"pos-att": "#ef4444", "pos-mid": "#22c55e", "pos-def": "#3b82f6", "pos-gk": "#eab308"}
+    pos_bg = pos_colors.get(pos_cls, "#6b7280")
+    return f"""
+<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+    <div class="fc-field-card" style="border-color:{bc};background:{bg};">
+        <div class="fc-field-card-pos" style="background:{pos_bg};">{player['pos']}</div>
+        <div class="fc-field-card-ovr" style="color:{ovr_c};">{player['ovr']}</div>
+        <div class="fc-field-card-emoji">{player.get('emoji','⚽')}</div>
     </div>
-    """, unsafe_allow_html=True)
-
-    menu_options = {
-        "🏠 Bosh Sahifa": "home",
-        "👥 O'yinchilar Bazasi": "players",
-        "🏗️ Jamoa Quruvchi": "squad_builder",
-        "📐 Formatsiya Tahlilchisi": "formations",
-        "🎮 O'yin Rejimlari": "game_modes",
-        "🧮 OVR Kalkulyatori": "ovr_calc",
-        "📊 Statistika va Tahlil": "stats",
-        "📅 Hodisalar Taqvimi": "events",
-        "💡 Maslahatlar": "tips",
-        "💰 Transfer Marketi": "transfer",
-        "⚽ O'yin Simulyatori": "simulator",
-        "🏆 Ligalar va Jamoalar": "leagues",
-        "🔧 Sozlamalar": "settings",
-    }
-
-    selected_page = st.selectbox(
-        "📍 Sahifani tanlang:",
-        list(menu_options.keys()),
-        key="nav_select"
-    )
-    page = menu_options[selected_page]
-
-    st.markdown("---")
-
-    # Sidebar qo'shimcha info
-    st.markdown("""
-    <div style='background: rgba(0,176,80,0.1); border: 1px solid rgba(0,176,80,0.3);
-                border-radius: 10px; padding: 12px; margin: 5px 0;'>
-        <div style='color: #00FF88; font-weight: bold; margin-bottom: 8px;'>📊 O'yin Statistikasi</div>
-        <div style='color: #aaa; font-size: 12px;'>19,000+ O'yinchi</div>
-        <div style='color: #aaa; font-size: 12px;'>690 Jamoa</div>
-        <div style='color: #aaa; font-size: 12px;'>35 Liga</div>
-        <div style='color: #aaa; font-size: 12px;'>100M+ Oylik o'yinchilar</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div style='background: rgba(255,215,0,0.1); border: 1px solid rgba(255,215,0,0.3);
-                border-radius: 10px; padding: 12px; margin: 5px 0;'>
-        <div style='color: #FFD700; font-weight: bold; margin-bottom: 8px;'>🎯 Joriy META</div>
-        <div style='color: #aaa; font-size: 12px;'>Formatsiya: 3-5-2</div>
-        <div style='color: #aaa; font-size: 12px;'>O'yin: Head to Head</div>
-        <div style='color: #aaa; font-size: 12px;'>Muhim: Tezlik + CDM</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown(f"""
-    <div style='text-align: center; color: #666; font-size: 11px; padding: 10px;'>
-        FC Mobile 26 Companion v2.6<br>
-        {datetime.now().strftime('%Y-%m-%d')}
-    </div>
-    """, unsafe_allow_html=True)
+    <div class="fc-field-name">{player['name']}</div>
+    <div class="fc-field-pos-label">{player['pos']}</div>
+</div>
+"""
 
 
-# ═══════════════════════════════════════════════════════════════
-#  BOS SAHIFA
-# ═══════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════
+#  TOP BAR
+# ══════════════════════════════════════════════════
+lvl = 80; xp_cur = 2510; xp_max = 6400
+xp_pct = int(xp_cur / xp_max * 100)
 
-if page == "home":
-    # Hero section
-    st.markdown("""
-    <div style='text-align: center; padding: 30px 0 20px 0;'>
-        <div style='font-size: 70px;'>⚽</div>
-        <div class='main-title'>EA SPORTS FC MOBILE 26</div>
-        <div style='color: #aaaaaa; font-size: 16px; margin-top: 5px;'>
-            To'liq Hamroh Dastur | Barcha ma'lumotlar bir joyda
-        </div>
-        <div style='height: 3px; background: linear-gradient(90deg, transparent, #00B050, #FFD700, transparent);
-                    margin: 15px auto; width: 60%; border-radius: 2px;'></div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Asosiy metriklar
-    col1, col2, col3, col4, col5, col6 = st.columns(6)
-    stats = get_global_stats()
-
-    with col1:
-        st.metric("⚽ O'yinchilar", stats["total_players"], "19,000+")
-    with col2:
-        st.metric("🏟️ Jamoalar", stats["total_teams"], "690 klub")
-    with col3:
-        st.metric("🏆 Ligalar", stats["total_leagues"], "35 liga")
-    with col4:
-        st.metric("🎮 Rejimlar", stats["game_modes"], "8 tur")
-    with col5:
-        st.metric("⭐ MAX OVR", stats["max_ovr"], "109 OVR")
-    with col6:
-        st.metric("👥 O'yinchilar", stats["monthly_players"], "Oylik")
-
-    st.markdown("<div class='green-divider'></div>", unsafe_allow_html=True)
-
-    # O'yin haqida
-    col1, col2 = st.columns([2, 1])
-
-    with col1:
-        st.markdown("""
-        <div class='section-header'>🎯 FC Mobile 26 Haqida</div>
-        """, unsafe_allow_html=True)
-
-        st.markdown("""
-        <div class='glass-card'>
-        <p style='color: #cccccc; line-height: 1.8; font-size: 15px;'>
-        <b style='color: #00FF88;'>EA Sports FC Mobile 26</b> — bu EA Sports'ning mobil futbol o'yinlarining eng yangi
-        va eng mukammal versiyasidir. FIFA Mobile nomi bilan 2016 yildan mavjud bo'lgan bu o'yin,
-        2023 yilda EA Sports FC Mobile nomini oldi.
-        </p>
-
-        <p style='color: #cccccc; line-height: 1.8; font-size: 15px;'>
-        <b style='color: #FFD700;'>Yangi FC Mobile 26 Yangiliklari:</b><br>
-        ✅ Yangi UI dizayni — zamonaviy va toza interfeys<br>
-        ✅ 7 ta yangi formatsiya qo'shildi<br>
-        ✅ Jamoaviy nishon tizimi (Team Badge)<br>
-        ✅ Yaxshilangan futbolchilar AI harakati<br>
-        ✅ Yangilangan Division Rivals tizimi<br>
-        ✅ Yuzlar skaneri yangilandi (Face Scans)<br>
-        ✅ Referees va Kickoff Rush yaxshilandi<br>
-        ✅ Drafts yangi funksiyasi qo'shildi
-        </p>
-
-        <p style='color: #cccccc; line-height: 1.8; font-size: 15px;'>
-        O'yin <b style='color: #00B0FF;'>iOS va Android</b> platformalarida bepul yuklab olinadi,
-        ammo ichki xaridlar (in-app purchases) mavjud.
-        </p>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with col2:
-        st.markdown("""
-        <div class='section-header'>🔥 META Xabarlari</div>
-        """, unsafe_allow_html=True)
-
-        # META ma'lumotlari
-        meta_items = [
-            ("🥇", "Eng yaxshi formatsiya", "3-5-2", "#FFD700"),
-            ("⚡", "Eng muhim stat", "Tezlik (Pace)", "#00FF88"),
-            ("🎯", "Eng yaxshi mode", "Division Rivals", "#00B0FF"),
-            ("💎", "Eng qimmat karta", "Pele ICON", "#FF8C00"),
-            ("📈", "OVR chegarasi", "109 (ELITE)", "#FF4444"),
-            ("🏆", "Joriy event", "Glorious Eras", "#FFD700"),
-        ]
-
-        for icon, label, value, color in meta_items:
-            st.markdown(f"""
-            <div style='display: flex; justify-content: space-between; align-items: center;
-                        background: rgba(255,255,255,0.05); border-radius: 8px; padding: 10px 12px;
-                        margin: 5px 0; border-left: 3px solid {color};'>
-                <span style='color: #aaaaaa; font-size: 13px;'>{icon} {label}</span>
-                <span style='color: {color}; font-weight: bold; font-size: 13px;'>{value}</span>
+st.markdown(f"""
+<div class="fc-topbar">
+    <div class="fc-profile-info">
+        <div class="fc-avatar">S</div>
+        <div>
+            <div class="fc-username">Somosab</div>
+            <div class="fc-level-bar-wrap">
+                <span class="fc-level-num">Lv.{lvl}</span>
+                <div class="fc-level-bar"><div class="fc-level-fill" style="width:{xp_pct}%"></div></div>
+                <span class="fc-level-num">{xp_cur}/{xp_max}</span>
             </div>
-            """, unsafe_allow_html=True)
-
-    st.markdown("<div class='green-divider'></div>", unsafe_allow_html=True)
-
-    # Qo'shimcha ma'lumotlar
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.markdown("""
-        <div class='section-header'>🌍 Versiyalar</div>
-        """, unsafe_allow_html=True)
-        versions = [
-            ("🌐", "Global", "EA Sports", "iOS & Android"),
-            ("🇨🇳", "Xitoy", "Tencent Games", "iOS & Android"),
-            ("🇯🇵🇰🇷", "Yaponiya/Koreya", "Nexon", "iOS & Android"),
-            ("🇻🇳", "Vyetnam", "Garena", "iOS & Android"),
-        ]
-        for flag, region, publisher, platform in versions:
-            st.markdown(f"""
-            <div style='background: rgba(255,255,255,0.05); border-radius: 8px; padding: 10px;
-                        margin: 5px 0; border: 1px solid rgba(255,255,255,0.1);'>
-                <b style='color: #00FF88;'>{flag} {region}</b><br>
-                <span style='color: #aaa; font-size: 12px;'>Nashriyot: {publisher}</span><br>
-                <span style='color: #666; font-size: 12px;'>{platform}</span>
-            </div>
-            """, unsafe_allow_html=True)
-
-    with col2:
-        st.markdown("""
-        <div class='section-header'>📅 Muhim Sanalar</div>
-        """, unsafe_allow_html=True)
-        dates = [
-            ("2016", "O'yin chiqarildi (FIFA Mobile)", "#666"),
-            ("2023", "FC Mobile nomi olindi", "#888"),
-            ("Sep 2024", "FC Mobile 25 chiqarildi", "#00B050"),
-            ("Aug 2025", "FC Mobile 26 Beta test", "#FFD700"),
-            ("Sep 2025", "FC Mobile 26 rasmiy chiqdi", "#00FF88"),
-            ("2026", "FC Mobile 27 kutilmoqda", "#00B0FF"),
-        ]
-        for year, event, color in dates:
-            st.markdown(f"""
-            <div style='display: flex; align-items: center; margin: 5px 0;'>
-                <span style='color: {color}; font-weight: bold; min-width: 80px; font-size: 13px;'>{year}</span>
-                <span style='color: #aaaaaa; font-size: 13px;'>→ {event}</span>
-            </div>
-            """, unsafe_allow_html=True)
-
-    with col3:
-        st.markdown("""
-        <div class='section-header'>🎮 Platformalar</div>
-        """, unsafe_allow_html=True)
-        st.markdown("""
-        <div style='background: rgba(0,176,80,0.1); border-radius: 10px; padding: 15px;'>
-            <div style='margin: 8px 0;'>
-                <span style='color: #00FF88; font-size: 18px;'>📱</span>
-                <span style='color: #ccc;'> iOS (iPhone & iPad)</span>
-                <br><span style='color: #666; font-size: 12px; padding-left: 30px;'>App Store - Bepul</span>
-            </div>
-            <div style='margin: 8px 0;'>
-                <span style='color: #00FF88; font-size: 18px;'>🤖</span>
-                <span style='color: #ccc;'> Android</span>
-                <br><span style='color: #666; font-size: 12px; padding-left: 30px;'>Google Play - Bepul</span>
-            </div>
-            <div style='margin: 8px 0; color: #888;'>
-                <span style='color: #666; font-size: 16px;'>💻</span>
-                <span style='color: #666;'> Windows (to'xtatilgan)</span>
-                <br><span style='color: #555; font-size: 12px; padding-left: 30px;'>2017 yildan qo'llab quvvatlanmaydi</span>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # Pastki qism - Tezkor havolalar
-    st.markdown("<div class='green-divider'></div>", unsafe_allow_html=True)
-    st.markdown("### 🚀 Tezkor Havolalar")
-
-    quick_cols = st.columns(4)
-    quick_links = [
-        ("👥", "O'yinchilar Bazasiga o'tish", "players"),
-        ("🏗️", "Jamoa qurish", "squad_builder"),
-        ("📐", "Formatsiya tanlash", "formations"),
-        ("💡", "Maslahatlar olish", "tips"),
-    ]
-
-    for i, (icon, text, target) in enumerate(quick_links):
-        with quick_cols[i]:
-            if st.button(f"{icon} {text}", key=f"quick_{target}"):
-                st.info(f"Iltimos yuqoridan '{text}' ni tanlang")
-
-
-# ═══════════════════════════════════════════════════════════════
-#  O'YINCHILAR BAZASI
-# ═══════════════════════════════════════════════════════════════
-
-elif page == "players":
-    st.markdown("""
-    <div class='section-header'>👥 O'yinchilar Bazasi</div>
-    """, unsafe_allow_html=True)
-
-    # Filterlar
-    with st.expander("🔍 Filterlar va Qidiruv", expanded=True):
-        col1, col2, col3, col4, col5 = st.columns(5)
-
-        with col1:
-            search_name = st.text_input("🔎 O'yinchi ismi", placeholder="Ronaldo, Messi...")
-
-        with col2:
-            positions = ["Hammasi"] + sorted(list(set([p["position"] for p in PLAYERS_DATA])))
-            filter_pos = st.selectbox("📍 Pozitsiya", positions)
-
-        with col3:
-            leagues_list = ["Hammasi"] + sorted(list(set([p["league"] for p in PLAYERS_DATA])))
-            filter_league = st.selectbox("🏆 Liga", leagues_list)
-
-        with col4:
-            types_list = ["Hammasi"] + sorted(list(set([p["type"] for p in PLAYERS_DATA])))
-            filter_type = st.selectbox("⭐ Karta turi", types_list)
-
-        with col5:
-            min_ovr = st.slider("📊 Minimal OVR", 90, 109, 100)
-
-    # Ma'lumotlarni filterlash
-    filtered = PLAYERS_DATA.copy()
-
-    if search_name:
-        filtered = [p for p in filtered if search_name.lower() in p["name"].lower()]
-    if filter_pos != "Hammasi":
-        filtered = [p for p in filtered if p["position"] == filter_pos]
-    if filter_league != "Hammasi":
-        filtered = [p for p in filtered if p["league"] == filter_league]
-    if filter_type != "Hammasi":
-        filtered = [p for p in filtered if p["type"] == filter_type]
-    filtered = [p for p in filtered if p["ovr"] >= min_ovr]
-
-    # Saralash
-    sort_col1, sort_col2 = st.columns([3, 1])
-    with sort_col1:
-        sort_by = st.selectbox("🔢 Saralash:", ["OVR (yuqoridan)", "OVR (pastdan)", "Narx (yuqoridan)", "Ismi (A-Z)", "Tezlik", "Shoot"])
-    with sort_col2:
-        st.metric("🔍 Natijalar", f"{len(filtered)} ta")
-
-    # Saralash logikasi
-    sort_map = {
-        "OVR (yuqoridan)": ("ovr", True),
-        "OVR (pastdan)": ("ovr", False),
-        "Narx (yuqoridan)": ("price", True),
-        "Ismi (A-Z)": ("name", False),
-        "Tezlik": ("pace", True),
-        "Shoot": ("shooting", True),
-    }
-    sk, sr = sort_map[sort_by]
-    filtered = sorted(filtered, key=lambda x: x[sk], reverse=sr)
-
-    # O'yinchilar ko'rinishi
-    view_mode = st.radio("Korinish:", ["🃏 Karta", "📋 Jadval"], horizontal=True)
-
-    if view_mode == "🃏 Karta":
-        # Karta ko'rinishi
-        cards_per_row = 4
-        for i in range(0, min(len(filtered), 40), cards_per_row):
-            cols = st.columns(cards_per_row)
-            for j, col in enumerate(cols):
-                if i + j < len(filtered):
-                    p = filtered[i + j]
-                    ovr_color = get_ovr_color(p["ovr"])
-                    pos_color = get_position_color(p["position"])
-                    with col:
-                        st.markdown(f"""
-                        <div style='background: linear-gradient(135deg, rgba(30,30,50,0.9), rgba(10,20,40,0.9));
-                                    border: 2px solid {ovr_color}44; border-radius: 15px; padding: 15px;
-                                    text-align: center; margin: 5px 0;
-                                    box-shadow: 0 4px 15px {ovr_color}22;
-                                    transition: all 0.3s ease;'>
-
-                            <!-- OVR Badge -->
-                            <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;'>
-                                <div style='background: {ovr_color}; color: #000; font-weight: bold;
-                                            font-size: 22px; width: 50px; height: 50px; border-radius: 50%;
-                                            display: flex; align-items: center; justify-content: center;'>
-                                    {p["ovr"]}
-                                </div>
-                                <div style='background: {pos_color}33; color: {pos_color}; font-weight: bold;
-                                            padding: 4px 8px; border-radius: 5px; font-size: 13px;'>
-                                    {p["position"]}
-                                </div>
-                            </div>
-
-                            <!-- Ism -->
-                            <div style='font-weight: bold; font-size: 14px; color: #ffffff;
-                                        margin: 8px 0; min-height: 40px;'>{p["name"]}</div>
-
-                            <!-- Jamoa va liga -->
-                            <div style='color: #aaaaaa; font-size: 11px; margin: 3px 0;'>
-                                🏟️ {p["team"]}
-                            </div>
-                            <div style='color: #888; font-size: 11px; margin: 3px 0;'>
-                                🌍 {p["nationality"]}
-                            </div>
-
-                            <!-- Karta turi -->
-                            <div style='background: {ovr_color}22; color: {ovr_color};
-                                        border: 1px solid {ovr_color}44; border-radius: 5px;
-                                        padding: 3px 8px; font-size: 11px; font-weight: bold;
-                                        margin: 8px 0;'>
-                                {get_ovr_label(p["ovr"])}
-                            </div>
-
-                            <!-- Stats mini bar -->
-                            <div style='margin: 8px 0;'>
-                                <div style='display: flex; justify-content: space-between; font-size: 10px; color: #888;'>
-                                    <span>PAC</span><span>SHO</span><span>PAS</span><span>DRI</span>
-                                </div>
-                                <div style='display: flex; gap: 3px; margin-top: 3px;'>
-                                    {"".join([f'<div style="flex:1; height:5px; border-radius:3px; background: linear-gradient(90deg, #00B050, #007A35); opacity: {stat/100};"></div>' for stat in [p["pace"], p["shooting"], p["passing"], p["dribbling"]]])}
-                                </div>
-                                <div style='display: flex; justify-content: space-between; font-size: 10px; color: #ccc; margin-top: 2px;'>
-                                    <span>{p["pace"]}</span><span>{p["shooting"]}</span><span>{p["passing"]}</span><span>{p["dribbling"]}</span>
-                                </div>
-                            </div>
-
-                            <!-- Narx -->
-                            <div style='color: #FFD700; font-size: 12px; font-weight: bold; margin-top: 8px;'>
-                                💰 {format_price(p["price"])} Coins
-                            </div>
-
-                            <!-- Skill & WF -->
-                            <div style='display: flex; justify-content: center; gap: 10px; margin-top: 5px; font-size: 11px; color: #888;'>
-                                <span>SM: {get_star_display(p["skill_moves"])}</span>
-                                <span>WF: {get_star_display(p["weak_foot"])}</span>
-                            </div>
-                        </div>
-                        """, unsafe_allow_html=True)
-    else:
-        # Jadval ko'rinishi
-        df_players = pd.DataFrame(filtered)
-        display_cols = ["name", "position", "ovr", "team", "league", "nationality",
-                       "pace", "shooting", "passing", "dribbling", "defending", "physical", "type"]
-        df_display = df_players[display_cols].copy()
-        df_display.columns = ["Ism", "Pozitsiya", "OVR", "Jamoa", "Liga", "Millat",
-                              "Tezlik", "Udarish", "Pas", "Dribbling", "Himoya", "Jismoniy", "Tur"]
-        st.dataframe(df_display, use_container_width=True, height=600)
-
-    # Statistika grafiklari
-    st.markdown("<div class='green-divider'></div>", unsafe_allow_html=True)
-    st.markdown("### 📊 O'yinchilar Statistikasi")
-
-    stat_col1, stat_col2 = st.columns(2)
-
-    with stat_col1:
-        # Pozitsiya bo'yicha taqsimot
-        pos_counts = {}
-        for p in PLAYERS_DATA:
-            pos = p["position"]
-            pos_counts[pos] = pos_counts.get(pos, 0) + 1
-
-        fig_pos = px.pie(
-            values=list(pos_counts.values()),
-            names=list(pos_counts.keys()),
-            title="Pozitsiyalar bo'yicha taqsimot",
-            color_discrete_sequence=px.colors.qualitative.Set3
-        )
-        fig_pos.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            font_color="white",
-            title_font_color="#00FF88"
-        )
-        st.plotly_chart(fig_pos, use_container_width=True)
-
-    with stat_col2:
-        # OVR taqsimoti
-        ovr_values = [p["ovr"] for p in PLAYERS_DATA]
-        fig_ovr = px.histogram(
-            x=ovr_values,
-            nbins=10,
-            title="OVR Taqsimoti",
-            color_discrete_sequence=["#00B050"],
-            labels={"x": "OVR", "y": "O'yinchilar soni"}
-        )
-        fig_ovr.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0.3)",
-            font_color="white",
-            title_font_color="#00FF88"
-        )
-        st.plotly_chart(fig_ovr, use_container_width=True)
-
-
-# ═══════════════════════════════════════════════════════════════
-#  JAMOA QURUVCHI
-# ═══════════════════════════════════════════════════════════════
-
-elif page == "squad_builder":
-    st.markdown("""
-    <div class='section-header'>🏗️ Jamoa Quruvchi</div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class='glass-card'>
-        <b style='color: #00FF88;'>ℹ️ Qanday ishlaydi?</b><br>
-        <span style='color: #aaa;'>Har bir pozitsiya uchun o'yinchi tanlang. Tizim avtomatik ravishda 
-        jamoa OVR, kimyo va tavsiyalarni hisoblab beradi.</span>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Formatsiya tanlash
-    form_col1, form_col2 = st.columns([2, 1])
-    with form_col1:
-        selected_formation = st.selectbox(
-            "📐 Formatsiyani tanlang:",
-            list(FORMATIONS.keys()),
-            key="squad_formation"
-        )
-    with form_col2:
-        form_info = FORMATIONS[selected_formation]
-        tier_colors = {"S": "#FFD700", "A": "#00B050", "B": "#0088FF", "C": "#FF4444"}
-        tier_color = tier_colors.get(form_info["tier"], "#888")
-        st.markdown(f"""
-        <div style='background: rgba(255,255,255,0.05); border-radius: 10px; padding: 10px;
-                    border: 1px solid {tier_color}44; margin-top: 5px;'>
-            <span style='color: {tier_color}; font-weight: bold;'>{form_info["tier"]} Tier</span>
-            <span style='color: #aaa; font-size: 12px;'> — {form_info["style"]}</span><br>
-            <span style='color: #888; font-size: 12px;'>{form_info["description"]}</span>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # Jamoa qurish
-    positions = FORMATIONS[selected_formation]["positions"]
-    player_names = ["— Tanlang —"] + sorted([p["name"] for p in PLAYERS_DATA])
-
-    st.markdown("### 👨‍⚽ O'yinchilarni tanlang")
-
-    # Saqlash uchun
-    if "squad" not in st.session_state:
-        st.session_state.squad = {}
-
-    # Pozitsiyalar bo'yicha guruhlash
-    gk_pos = [p for p in positions if p == "GK"]
-    def_pos = [p for p in positions if p in ["CB", "LB", "RB", "LWB", "RWB"]]
-    mid_pos = [p for p in positions if p in ["CDM", "CM", "CAM", "LM", "RM", "LAM", "RAM", "LAF", "RAF"]]
-    att_pos = [p for p in positions if p in ["ST", "CF", "LW", "RW", "SS"]]
-
-    # Ko'rsatish
-    all_pos_groups = [
-        ("⚡ Hujumchilar", att_pos),
-        ("🎯 O'rtamiyonlar", mid_pos),
-        ("🛡️ Himoyachilar", def_pos),
-        ("🧤 Darvozabon", gk_pos),
-    ]
-
-    squad_ovr_list = []
-
-    for group_name, group_positions in all_pos_groups:
-        if group_positions:
-            st.markdown(f"**{group_name}**")
-            cols = st.columns(len(group_positions))
-            for idx, (pos, col) in enumerate(zip(group_positions, cols)):
-                key = f"pos_{pos}_{idx}"
-                with col:
-                    selected_player_name = st.selectbox(
-                        pos,
-                        player_names,
-                        key=key
-                    )
-                    if selected_player_name != "— Tanlang —":
-                        player_data = next((p for p in PLAYERS_DATA if p["name"] == selected_player_name), None)
-                        if player_data:
-                            ovr_color = get_ovr_color(player_data["ovr"])
-                            st.markdown(f"""
-                            <div style='text-align: center; background: {ovr_color}22;
-                                        border: 1px solid {ovr_color}44; border-radius: 8px; padding: 8px; margin-top: -10px;'>
-                                <div style='color: {ovr_color}; font-size: 20px; font-weight: bold;'>{player_data["ovr"]}</div>
-                                <div style='color: #aaa; font-size: 10px;'>{player_data["type"]}</div>
-                            </div>
-                            """, unsafe_allow_html=True)
-                            squad_ovr_list.append(player_data["ovr"])
-                            st.session_state.squad[key] = player_data
-
-    st.markdown("<div class='green-divider'></div>", unsafe_allow_html=True)
-
-    # Jamoa OVR va statistika
-    if squad_ovr_list:
-        team_ovr = calculate_team_ovr(squad_ovr_list)
-
-        result_col1, result_col2, result_col3, result_col4 = st.columns(4)
-
-        with result_col1:
-            ovr_color = get_ovr_color(int(team_ovr))
-            st.markdown(f"""
-            <div style='text-align: center; background: {ovr_color}22; border: 2px solid {ovr_color};
-                        border-radius: 15px; padding: 20px;'>
-                <div style='font-size: 48px; font-weight: bold; color: {ovr_color};'>{team_ovr:.0f}</div>
-                <div style='color: #aaa;'>Jamoa OVR</div>
-                <div style='color: {ovr_color}; font-size: 12px;'>{get_ovr_label(int(team_ovr))}</div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        with result_col2:
-            avg_pace = np.mean([p["pace"] for p in st.session_state.squad.values() if isinstance(p, dict)])
-            st.markdown(f"""
-            <div style='text-align: center; background: rgba(0,176,80,0.2); border: 2px solid #00B050;
-                        border-radius: 15px; padding: 20px;'>
-                <div style='font-size: 40px; font-weight: bold; color: #00FF88;'>{avg_pace:.0f}</div>
-                <div style='color: #aaa;'>O'rtacha Tezlik</div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        with result_col3:
-            total_price = sum([p["price"] for p in st.session_state.squad.values() if isinstance(p, dict)])
-            st.markdown(f"""
-            <div style='text-align: center; background: rgba(255,215,0,0.2); border: 2px solid #FFD700;
-                        border-radius: 15px; padding: 20px;'>
-                <div style='font-size: 32px; font-weight: bold; color: #FFD700;'>{format_price(total_price)}</div>
-                <div style='color: #aaa;'>Jamoa Narxi</div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        with result_col4:
-            selected_count = len(squad_ovr_list)
-            st.markdown(f"""
-            <div style='text-align: center; background: rgba(0,136,255,0.2); border: 2px solid #0088FF;
-                        border-radius: 15px; padding: 20px;'>
-                <div style='font-size: 40px; font-weight: bold; color: #00B0FF;'>{selected_count}/11</div>
-                <div style='color: #aaa;'>Tanlangan O'yinchilar</div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        # Radar chart
-        if len(st.session_state.squad) >= 3:
-            team_stats = {
-                "Tezlik": np.mean([p["pace"] for p in st.session_state.squad.values() if isinstance(p, dict)]),
-                "Udarish": np.mean([p["shooting"] for p in st.session_state.squad.values() if isinstance(p, dict)]),
-                "Passing": np.mean([p["passing"] for p in st.session_state.squad.values() if isinstance(p, dict)]),
-                "Dribbling": np.mean([p["dribbling"] for p in st.session_state.squad.values() if isinstance(p, dict)]),
-                "Himoya": np.mean([p["defending"] for p in st.session_state.squad.values() if isinstance(p, dict)]),
-                "Jismoniy": np.mean([p["physical"] for p in st.session_state.squad.values() if isinstance(p, dict)]),
-            }
-
-            fig_radar = go.Figure()
-            fig_radar.add_trace(go.Scatterpolar(
-                r=list(team_stats.values()),
-                theta=list(team_stats.keys()),
-                fill='toself',
-                fillcolor='rgba(0,176,80,0.2)',
-                line=dict(color='#00B050', width=2),
-                name='Sizning jamoangiz'
-            ))
-            fig_radar.update_layout(
-                polar=dict(
-                    radialaxis=dict(visible=True, range=[0, 100], color="#666"),
-                    angularaxis=dict(color="#aaa")
-                ),
-                showlegend=True,
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                font_color="white",
-                title="Jamoa Statistikasi Radar",
-                title_font_color="#00FF88"
-            )
-            st.plotly_chart(fig_radar, use_container_width=True)
-
-    # Savat tozalash tugmasi
-    if st.button("🗑️ Jamoani tozalash", key="clear_squad"):
-        st.session_state.squad = {}
-        st.rerun()
-
-
-# ═══════════════════════════════════════════════════════════════
-#  FORMATSIYA TAHLILCHISI
-# ═══════════════════════════════════════════════════════════════
-
-elif page == "formations":
-    st.markdown("""
-    <div class='section-header'>📐 Formatsiya Tahlilchisi</div>
-    """, unsafe_allow_html=True)
-
-    # Formatsiyalar jadvali
-    col1, col2 = st.columns([1, 2])
-
-    with col1:
-        selected_form = st.selectbox(
-            "Formatsiyani tanlang:",
-            list(FORMATIONS.keys()),
-            key="form_select"
-        )
-        form_data = FORMATIONS[selected_form]
-        tier_colors = {"S": "#FFD700", "A": "#00B050", "B": "#0088FF", "C": "#FF4444"}
-        tier_color = tier_colors.get(form_data["tier"], "#888")
-
-        st.markdown(f"""
-        <div style='background: rgba(255,255,255,0.05); border: 2px solid {tier_color};
-                    border-radius: 12px; padding: 20px; margin: 10px 0;'>
-            <div style='color: {tier_color}; font-size: 28px; font-weight: bold; text-align: center;'>
-                {selected_form}
-            </div>
-            <div style='text-align: center; margin: 5px 0;'>
-                <span style='background: {tier_color}; color: #000; padding: 3px 12px;
-                             border-radius: 15px; font-weight: bold;'>{form_data["tier"]} TIER</span>
-            </div>
-            <div style='color: #aaa; font-size: 13px; margin: 10px 0;'>{form_data["description"]}</div>
-            <div style='color: #888; font-size: 12px;'>
-                🎯 Maqsad: {form_data["best_for"]}<br>
-                ⚽ Uslub: {form_data["style"]}<br>
-                🎮 Qiyinchilik: {form_data["difficulty"]}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # META rating
-        meta = form_data["meta_rating"]
-        st.markdown(f"""
-        <div style='background: rgba(255,255,255,0.05); border-radius: 10px; padding: 15px;'>
-            <div style='color: #aaa; font-size: 13px; margin-bottom: 5px;'>📊 META Rating</div>
-            <div style='background: rgba(255,255,255,0.1); border-radius: 10px; height: 20px; overflow: hidden;'>
-                <div style='width: {meta}%; height: 100%;
-                            background: linear-gradient(90deg, {"#00B050" if meta >= 90 else "#FFD700" if meta >= 80 else "#FF4444"}, transparent);
-                            border-radius: 10px;'></div>
-            </div>
-            <div style='color: {"#00FF88" if meta >= 90 else "#FFD700" if meta >= 80 else "#FF4444"};
-                        font-size: 18px; font-weight: bold; text-align: center;'>{meta}/100</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with col2:
-        # Maydon vizualizatsiyasi
-        st.markdown("### ⚽ Maydon Joylashuvi")
-
-        positions = form_data["positions"]
-
-        # Formatsiyani maydon ko'rinishida chizish
-        def draw_field(formation_name, positions):
-            fig = go.Figure()
-
-            # Maydon rangini o'rnatish
-            fig.add_shape(type="rect", x0=0, y0=0, x1=100, y1=130,
-                         fillcolor="#2D7A2D", line=dict(color="#1a5c1a", width=2))
-
-            # O'rtadagi chiziq
-            fig.add_shape(type="line", x0=0, y0=65, x1=100, y1=65,
-                         line=dict(color="white", width=1, dash="dash"))
-
-            # O'rtadagi doira
-            fig.add_shape(type="circle", x0=40, y0=55, x1=60, y1=75,
-                         line=dict(color="white", width=1))
-
-            # Jazoga tashlanish joyi
-            fig.add_shape(type="rect", x0=20, y0=0, x1=80, y1=20,
-                         line=dict(color="white", width=1), fillcolor="rgba(0,0,0,0)")
-            fig.add_shape(type="rect", x0=20, y0=110, x1=80, y1=130,
-                         line=dict(color="white", width=1), fillcolor="rgba(0,0,0,0)")
-
-            # Gol maydonlari
-            fig.add_shape(type="rect", x0=35, y0=0, x1=65, y1=8,
-                         line=dict(color="white", width=1), fillcolor="rgba(0,0,0,0)")
-            fig.add_shape(type="rect", x0=35, y0=122, x1=65, y1=130,
-                         line=dict(color="white", width=1), fillcolor="rgba(0,0,0,0)")
-
-            # O'yinchilar joylashuvi
-            pos_coords = {
-                "GK": [(50, 5)],
-                "CB": [(30, 25), (50, 25), (70, 25)] if positions.count("CB") == 3
-                      else [(35, 25), (65, 25)] if positions.count("CB") == 2
-                      else [(50, 25)],
-                "LB": [(10, 30)], "RB": [(90, 30)],
-                "LWB": [(10, 40)], "RWB": [(90, 40)],
-                "CDM": [(35, 45), (65, 45)] if positions.count("CDM") == 2 else [(50, 45)],
-                "CM": [], "LM": [(10, 60)], "RM": [(90, 60)],
-                "CAM": [(50, 70)], "LAM": [(25, 70)], "RAM": [(75, 70)],
-                "LAF": [(25, 75)], "RAF": [(75, 75)],
-                "LW": [(15, 90)], "RW": [(85, 90)],
-                "ST": [], "CF": [(50, 100)],
-            }
-
-            # CM o'yinchilar soni
-            cm_count = positions.count("CM")
-            if cm_count == 1: pos_coords["CM"] = [(50, 55)]
-            elif cm_count == 2: pos_coords["CM"] = [(35, 55), (65, 55)]
-            elif cm_count == 3: pos_coords["CM"] = [(25, 55), (50, 55), (75, 55)]
-
-            # ST o'yinchilar soni
-            st_count = positions.count("ST")
-            if st_count == 1: pos_coords["ST"] = [(50, 110)]
-            elif st_count == 2: pos_coords["ST"] = [(35, 110), (65, 110)]
-
-            # CB 4 ta bo'lsa
-            if positions.count("CB") == 4:
-                pos_coords["CB"] = [(20, 25), (40, 25), (60, 25), (80, 25)]
-
-            # Marker'larni chizish
-            added_pos = {}
-            for pos in positions:
-                if pos not in added_pos:
-                    added_pos[pos] = 0
-                idx = added_pos[pos]
-                coords = pos_coords.get(pos, [])
-                if idx < len(coords):
-                    x, y = coords[idx]
-                    pos_color_map = {
-                        "GK": "#FFB300", "CB": "#1565C0", "LB": "#1565C0",
-                        "RB": "#1565C0", "LWB": "#0277BD", "RWB": "#0277BD",
-                        "CDM": "#2E7D32", "CM": "#388E3C", "LM": "#43A047",
-                        "RM": "#43A047", "CAM": "#F57F17", "LAM": "#F57F17",
-                        "RAM": "#F57F17", "LAF": "#E65100", "RAF": "#E65100",
-                        "LW": "#D32F2F", "RW": "#D32F2F", "ST": "#B71C1C",
-                        "CF": "#C62828",
-                    }
-                    color = pos_color_map.get(pos, "#ffffff")
-
-                    # Doira
-                    fig.add_shape(type="circle",
-                                 x0=x-6, y0=y-6, x1=x+6, y1=y+6,
-                                 fillcolor=color, line=dict(color="white", width=2))
-                    # Matn
-                    fig.add_annotation(x=x, y=y, text=pos,
-                                      font=dict(color="white", size=8, family="Arial Black"),
-                                      showarrow=False)
-                added_pos[pos] += 1
-
-            fig.update_layout(
-                width=400, height=500,
-                xaxis=dict(range=[0, 100], showgrid=False, zeroline=False, showticklabels=False),
-                yaxis=dict(range=[0, 130], showgrid=False, zeroline=False, showticklabels=False),
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                title=dict(text=f"{formation_name}", font=dict(color="#00FF88", size=16)),
-                margin=dict(l=10, r=10, t=40, b=10),
-            )
-            return fig
-
-        field_fig = draw_field(selected_form, positions)
-        st.plotly_chart(field_fig, use_container_width=True)
-
-    # Formatsiya afzalliklari va kamchiliklari
-    st.markdown("<div class='green-divider'></div>", unsafe_allow_html=True)
-
-    pro_con_col1, pro_con_col2 = st.columns(2)
-
-    with pro_con_col1:
-        st.markdown("**✅ Afzalliklari:**")
-        for pro in form_data["pros"]:
-            st.markdown(f"""
-            <div style='background: rgba(0,176,80,0.15); border-left: 3px solid #00B050;
-                        border-radius: 0 8px 8px 0; padding: 8px 12px; margin: 5px 0; color: #cccccc;'>
-                ✅ {pro}
-            </div>
-            """, unsafe_allow_html=True)
-
-    with pro_con_col2:
-        st.markdown("**❌ Kamchiliklari:**")
-        for con in form_data["cons"]:
-            st.markdown(f"""
-            <div style='background: rgba(255,68,68,0.15); border-left: 3px solid #FF4444;
-                        border-radius: 0 8px 8px 0; padding: 8px 12px; margin: 5px 0; color: #cccccc;'>
-                ❌ {con}
-            </div>
-            """, unsafe_allow_html=True)
-
-    # Barcha formatsiyalar taqqoslama
-    st.markdown("<div class='green-divider'></div>", unsafe_allow_html=True)
-    st.markdown("### 📊 Barcha Formatsiyalar Reytingi")
-
-    form_data_list = []
-    for name, data in FORMATIONS.items():
-        form_data_list.append({
-            "Formatsiya": name,
-            "Tier": data["tier"],
-            "META Rating": data["meta_rating"],
-            "Uslub": data["style"],
-            "Eng yaxshi rejim": data["best_for"],
-            "Qiyinchilik": data["difficulty"]
-        })
-
-    df_forms = pd.DataFrame(form_data_list).sort_values("META Rating", ascending=False)
-
-    fig_bar = px.bar(
-        df_forms,
-        x="Formatsiya",
-        y="META Rating",
-        color="Tier",
-        color_discrete_map={"S": "#FFD700", "A": "#00B050", "B": "#0088FF", "C": "#FF4444"},
-        title="Formatsiyalar META Reytingi",
-        text="META Rating"
-    )
-    fig_bar.update_layout(
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0.3)",
-        font_color="white",
-        title_font_color="#00FF88"
-    )
-    st.plotly_chart(fig_bar, use_container_width=True)
-
-
-# ═══════════════════════════════════════════════════════════════
-#  O'YIN REJIMLARI
-# ═══════════════════════════════════════════════════════════════
-
-elif page == "game_modes":
-    st.markdown("""
-    <div class='section-header'>🎮 O'yin Rejimlari</div>
-    """, unsafe_allow_html=True)
-
-    # Rejimlar kartalari
-    mode_names = list(GAME_MODES.keys())
-    cols_per_row = 2
-
-    for i in range(0, len(mode_names), cols_per_row):
-        cols = st.columns(cols_per_row)
-        for j, col in enumerate(cols):
-            if i + j < len(mode_names):
-                mode_name = mode_names[i + j]
-                mode = GAME_MODES[mode_name]
-                with col:
-                    with st.expander(f"{mode['icon']} {mode_name}", expanded=(i + j < 2)):
-                        st.markdown(f"""
-                        <div style='padding: 10px;'>
-                            <div style='color: #aaaaaa; font-size: 14px; margin-bottom: 12px; line-height: 1.6;'>
-                                {mode["description"]}
-                            </div>
-
-                            <div style='margin: 8px 0;'>
-                                <span style='color: #FFD700; font-weight: bold;'>🏆 Mukofotlar:</span>
-                                <span style='color: #ccc; font-size: 13px;'> {mode["rewards"]}</span>
-                            </div>
-
-                            <div style='margin: 8px 0;'>
-                                <span style='color: #00B0FF; font-weight: bold;'>📅 Mavsumlar:</span>
-                                <span style='color: #ccc; font-size: 13px;'> {mode["seasons"]}</span>
-                            </div>
-
-                            <div style='margin: 8px 0;'>
-                                <span style='color: #FF8844; font-weight: bold;'>⚡ Qiyinchilik:</span>
-                                <span style='color: #ccc; font-size: 13px;'> {mode["difficulty"]}</span>
-                            </div>
-                        </div>
-                        """, unsafe_allow_html=True)
-
-                        st.markdown("**💡 Maslahatlar:**")
-                        for tip in mode["tips"]:
-                            st.markdown(f"""
-                            <div style='background: rgba(0,176,80,0.1); border-left: 2px solid #00B050;
-                                        padding: 6px 10px; margin: 4px 0; border-radius: 0 5px 5px 0;
-                                        color: #cccccc; font-size: 13px;'>
-                                {tip}
-                            </div>
-                            """, unsafe_allow_html=True)
-
-    # O'yin rejimlari taqqoslash
-    st.markdown("<div class='green-divider'></div>", unsafe_allow_html=True)
-    st.markdown("### ⚖️ Rejimlar Taqqoslash")
-
-    diff_map = {"Oson": 1, "O'rta": 2, "Qiyin": 3, "Juda qiyin": 4}
-    mode_compare = []
-    for name, mode in GAME_MODES.items():
-        mode_compare.append({
-            "Rejim": name,
-            "Icon": mode["icon"],
-            "Qiyinchilik": diff_map.get(mode["difficulty"], 2),
-            "Uslub": mode["difficulty"]
-        })
-
-    df_modes = pd.DataFrame(mode_compare)
-    fig_modes = px.bar(
-        df_modes,
-        x="Rejim",
-        y="Qiyinchilik",
-        color="Uslub",
-        title="O'yin Rejimlari Qiyinchiligi",
-        color_discrete_map={
-            "Oson": "#00B050", "O'rta": "#FFD700",
-            "Qiyin": "#FF8844", "Juda qiyin": "#FF4444"
-        },
-        text="Uslub"
-    )
-    fig_modes.update_layout(
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0.3)",
-        font_color="white",
-        title_font_color="#00FF88",
-        yaxis=dict(tickvals=[1,2,3,4], ticktext=["Oson", "O'rta", "Qiyin", "Juda qiyin"])
-    )
-    st.plotly_chart(fig_modes, use_container_width=True)
-
-
-# ═══════════════════════════════════════════════════════════════
-#  OVR KALKULYATORI
-# ═══════════════════════════════════════════════════════════════
-
-elif page == "ovr_calc":
-    st.markdown("""
-    <div class='section-header'>🧮 OVR Kalkulyatori</div>
-    """, unsafe_allow_html=True)
-
-    tab1, tab2, tab3 = st.tabs(["📊 Jamoa OVR", "⬆️ Rank Up Hisoblash", "🆚 Taqqoslash"])
-
-    with tab1:
-        st.markdown("### 📊 Jamoa OVR Hisoblash")
-        st.markdown("""
-        <div class='glass-card'>
-        11 ta asosiy o'yinchi va zaxira o'yinchilarning base OVR ni kiriting.
-        Tizim avtomatik ravishda jamoaning umumiy OVR ni hisoblaydi.
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown("**⚽ Asosiy 11 ta o'yinchi:**")
-        main_ovrs = []
-        main_cols = st.columns(4)
-        for i in range(11):
-            with main_cols[i % 4]:
-                ovr_val = st.number_input(
-                    f"O'yinchi {i+1}",
-                    min_value=70, max_value=120, value=100,
-                    key=f"main_player_{i}"
-                )
-                main_ovrs.append(ovr_val)
-
-        st.markdown("**🔄 Zaxira o'yinchilar (ixtiyoriy):**")
-        sub_ovrs = []
-        sub_cols = st.columns(4)
-        for i in range(7):
-            with sub_cols[i % 4]:
-                ovr_val = st.number_input(
-                    f"Zaxira {i+1}",
-                    min_value=70, max_value=120, value=95,
-                    key=f"sub_player_{i}"
-                )
-                sub_ovrs.append(ovr_val)
-
-        if st.button("🧮 OVR Hisoblash", key="calc_ovr"):
-            team_ovr = calculate_team_ovr(main_ovrs)
-            ovr_color = get_ovr_color(int(team_ovr))
-
-            result_cols = st.columns(3)
-            with result_cols[0]:
-                st.markdown(f"""
-                <div style='text-align: center; background: {ovr_color}22;
-                            border: 3px solid {ovr_color}; border-radius: 20px; padding: 25px;'>
-                    <div style='font-size: 60px; font-weight: bold; color: {ovr_color};'>{team_ovr:.0f}</div>
-                    <div style='color: #aaa; font-size: 16px;'>Jamoaning OVR si</div>
-                    <div style='color: {ovr_color}; font-size: 14px;'>{get_ovr_label(int(team_ovr))}</div>
-                </div>
-                """, unsafe_allow_html=True)
-
-            with result_cols[1]:
-                st.markdown(f"""
-                <div style='background: rgba(0,176,80,0.1); border: 1px solid #00B050;
-                            border-radius: 15px; padding: 20px;'>
-                    <div style='color: #00FF88; font-weight: bold; margin-bottom: 10px;'>📊 Statistika</div>
-                    <div style='color: #ccc; font-size: 13px;'>
-                        Eng yuqori: <b style='color: #FFD700;'>{max(main_ovrs)}</b><br>
-                        Eng past: <b style='color: #FF4444;'>{min(main_ovrs)}</b><br>
-                        O'rtacha: <b style='color: #00FF88;'>{np.mean(main_ovrs):.1f}</b><br>
-                        Farq: <b style='color: #00B0FF;'>{max(main_ovrs) - min(main_ovrs)}</b>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-
-            with result_cols[2]:
-                next_ovr = int(team_ovr) + 1
-                needed = next_ovr * 11 - sum(sorted(main_ovrs, reverse=True)[:11])
-                st.markdown(f"""
-                <div style='background: rgba(255,165,0,0.1); border: 1px solid #FFA500;
-                            border-radius: 15px; padding: 20px;'>
-                    <div style='color: #FFD700; font-weight: bold; margin-bottom: 10px;'>⬆️ Keyingi OVR</div>
-                    <div style='color: #ccc; font-size: 13px;'>
-                        Maqsad: <b style='color: #FFD700;'>{next_ovr} OVR</b><br>
-                        Kerakli: <b style='color: #00FF88;'>+{max(0, needed):.0f} OVR</b><br>
-                        Strategiya: <b style='color: #00B0FF;'>Eng past kartani yaxshilang</b>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-
-            # OVR taqsimot grafigi
-            fig_dist = go.Figure()
-            fig_dist.add_trace(go.Bar(
-                x=[f"O'yinchi {i+1}" for i in range(11)],
-                y=main_ovrs,
-                marker=dict(
-                    color=main_ovrs,
-                    colorscale=[[0, "#FF4444"], [0.5, "#FFD700"], [1, "#00B050"]],
-                    colorbar=dict(title="OVR")
-                )
-            ))
-            fig_dist.update_layout(
-                title="O'yinchilar OVR Taqsimoti",
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0.3)",
-                font_color="white",
-                title_font_color="#00FF88"
-            )
-            st.plotly_chart(fig_dist, use_container_width=True)
-
-    with tab2:
-        st.markdown("### ⬆️ Rank Up Hisoblagich")
-
-        rank_col1, rank_col2 = st.columns(2)
-        with rank_col1:
-            base_ovr = st.number_input("Bazaviy OVR:", min_value=80, max_value=110, value=100)
-        with rank_col2:
-            current_ranks = st.number_input("Joriy Rank darajalari:", min_value=0, max_value=50, value=0)
-
-        current_total = base_ovr + current_ranks
-
-        rank_info = []
-        for ranks in range(0, 21):
-            total = base_ovr + ranks
-            rank_info.append({"Rank": ranks, "Total OVR": total, "Qo'shilgan": f"+{ranks}"})
-
-        df_ranks = pd.DataFrame(rank_info)
-
-        st.markdown(f"""
-        <div style='background: rgba(0,176,80,0.15); border: 2px solid #00B050;
-                    border-radius: 15px; padding: 20px; text-align: center;'>
-            <div style='color: #aaa;'>Joriy OVR</div>
-            <div style='font-size: 50px; font-weight: bold; color: {get_ovr_color(current_total)};'>
-                {current_total}
-            </div>
-            <div style='color: #aaa;'>Base: {base_ovr} + Rank: {current_ranks} = {current_total}</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        fig_rank = px.line(
-            df_ranks, x="Rank", y="Total OVR",
-            title=f"Rank Up OVR Progressi (Base: {base_ovr})",
-            markers=True,
-            color_discrete_sequence=["#00B050"]
-        )
-        fig_rank.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0.3)",
-            font_color="white",
-            title_font_color="#00FF88"
-        )
-        st.plotly_chart(fig_rank, use_container_width=True)
-
-    with tab3:
-        st.markdown("### 🆚 O'yinchilar Taqqoslash")
-
-        comp_col1, comp_col2 = st.columns(2)
-        player_names_list = [p["name"] for p in PLAYERS_DATA]
-
-        with comp_col1:
-            player1_name = st.selectbox("O'yinchi 1:", player_names_list, key="comp_p1")
-        with comp_col2:
-            player2_name = st.selectbox("O'yinchi 2:", player_names_list, index=1, key="comp_p2")
-
-        p1 = next((p for p in PLAYERS_DATA if p["name"] == player1_name), None)
-        p2 = next((p for p in PLAYERS_DATA if p["name"] == player2_name), None)
-
-        if p1 and p2:
-            stats_to_compare = ["pace", "shooting", "passing", "dribbling", "defending", "physical"]
-            stat_names = ["Tezlik", "Udarish", "Pas", "Dribbling", "Himoya", "Jismoniy"]
-
-            fig_comp = go.Figure()
-            fig_comp.add_trace(go.Scatterpolar(
-                r=[p1[s] for s in stats_to_compare],
-                theta=stat_names, fill='toself',
-                name=p1["name"],
-                fillcolor='rgba(0,176,80,0.2)',
-                line=dict(color='#00B050', width=2)
-            ))
-            fig_comp.add_trace(go.Scatterpolar(
-                r=[p2[s] for s in stats_to_compare],
-                theta=stat_names, fill='toself',
-                name=p2["name"],
-                fillcolor='rgba(255,68,68,0.2)',
-                line=dict(color='#FF4444', width=2)
-            ))
-            fig_comp.update_layout(
-                polar=dict(radialaxis=dict(range=[0, 100], color="#666")),
-                showlegend=True,
-                paper_bgcolor="rgba(0,0,0,0)",
-                font_color="white",
-                title="Statistika Taqqoslash",
-                title_font_color="#00FF88"
-            )
-            st.plotly_chart(fig_comp, use_container_width=True)
-
-            # Parallel taqqoslash
-            comp_table_cols = st.columns(3)
-            with comp_table_cols[0]:
-                st.markdown(f"""
-                <div style='text-align: center;'>
-                    <div style='color: #00FF88; font-size: 18px; font-weight: bold;'>{p1["name"]}</div>
-                    <div style='font-size: 40px; font-weight: bold; color: {get_ovr_color(p1["ovr"])};'>{p1["ovr"]}</div>
-                    <div style='color: #aaa;'>{p1["position"]} | {p1["team"]}</div>
-                </div>
-                """, unsafe_allow_html=True)
-
-            with comp_table_cols[1]:
-                for stat, name in zip(stats_to_compare, stat_names):
-                    v1, v2 = p1[stat], p2[stat]
-                    winner = "green" if v1 > v2 else "red" if v1 < v2 else "gray"
-                    st.markdown(f"""
-                    <div style='display: flex; justify-content: space-between; align-items: center;
-                                padding: 4px; margin: 3px 0; border-radius: 5px;
-                                background: rgba(255,255,255,0.05);'>
-                        <span style='color: {"#00FF88" if v1 > v2 else "#FF4444" if v1 < v2 else "#aaa"};
-                                     font-weight: bold;'>{v1}</span>
-                        <span style='color: #666; font-size: 11px;'>{name}</span>
-                        <span style='color: {"#FF4444" if v1 > v2 else "#00FF88" if v1 < v2 else "#aaa"};
-                                     font-weight: bold;'>{v2}</span>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-            with comp_table_cols[2]:
-                st.markdown(f"""
-                <div style='text-align: center;'>
-                    <div style='color: #FF4444; font-size: 18px; font-weight: bold;'>{p2["name"]}</div>
-                    <div style='font-size: 40px; font-weight: bold; color: {get_ovr_color(p2["ovr"])};'>{p2["ovr"]}</div>
-                    <div style='color: #aaa;'>{p2["position"]} | {p2["team"]}</div>
-                </div>
-                """, unsafe_allow_html=True)
-
-
-# ═══════════════════════════════════════════════════════════════
-#  STATISTIKA VA TAHLIL
-# ═══════════════════════════════════════════════════════════════
-
-elif page == "stats":
-    st.markdown("""
-    <div class='section-header'>📊 Statistika va Tahlil</div>
-    """, unsafe_allow_html=True)
-
-    # O'yin statistikasi kiritish
-    col1, col2 = st.columns([1, 2])
-
-    with col1:
-        st.markdown("### 📝 O'yin Natijangizni Kiriting")
-
-        games_played = st.number_input("O'ynalgan o'yinlar:", 0, 1000, 50)
-        wins = st.number_input("G'alabalar:", 0, 1000, 30)
-        draws = st.number_input("Durranglar:", 0, 1000, 8)
-        goals_scored = st.number_input("Urilgan gollar:", 0, 5000, 120)
-        goals_conceded = st.number_input("O'tkazilgan gollar:", 0, 5000, 60)
-        current_division = st.selectbox("Joriy Division:", [
-            "Bronze III", "Bronze II", "Bronze I",
-            "Silver III", "Silver II", "Silver I",
-            "Gold III", "Gold II", "Gold I",
-            "Platinum III", "Platinum II", "Platinum I",
-            "Elite III", "Elite II", "Elite I",
-            "FC Champion"
-        ], index=9)
-
-        if st.button("📊 Tahlil qilish"):
-            losses = games_played - wins - draws
-            win_rate = (wins / games_played * 100) if games_played > 0 else 0
-            goal_avg = (goals_scored / games_played) if games_played > 0 else 0
-            goal_diff = goals_scored - goals_conceded
-
-            # Natijalar
-            metrics_col1, metrics_col2 = st.columns(2)
-            with metrics_col1:
-                st.metric("🏆 G'alaba foizi", f"{win_rate:.1f}%")
-                st.metric("⚽ O'rtacha gol", f"{goal_avg:.1f}")
-            with metrics_col2:
-                st.metric("📈 Gol farqi", f"+{goal_diff}" if goal_diff >= 0 else str(goal_diff))
-                st.metric("❌ Mag'lubiyat", losses)
-
-    with col2:
-        if games_played > 0:
-            losses = games_played - wins - draws
-            st.markdown("### 📈 Natijalar Grafigi")
-
-            fig_results = go.Figure(data=[go.Pie(
-                labels=["G'alabalar", "Durranglar", "Mag'lubiyatlar"],
-                values=[wins, draws, losses],
-                hole=0.4,
-                marker=dict(colors=["#00B050", "#FFD700", "#FF4444"])
-            )])
-            fig_results.update_layout(
-                paper_bgcolor="rgba(0,0,0,0)",
-                font_color="white",
-                title="Natijalar Taqsimoti",
-                title_font_color="#00FF88"
-            )
-            st.plotly_chart(fig_results, use_container_width=True)
-
-            # Progress bar
-            st.markdown("### 📊 Samaradorlik Ko'rsatkichlari")
-
-            indicators = [
-                ("G'alaba foizi", wins/games_played*100 if games_played > 0 else 0, "#00B050"),
-                ("Hujum samarasi", min(100, goals_scored/games_played*10) if games_played > 0 else 0, "#FF4444"),
-                ("Himoya samarasi", max(0, 100 - goals_conceded/games_played*10) if games_played > 0 else 0, "#0088FF"),
-            ]
-
-            for name, value, color in indicators:
-                st.markdown(f"""
-                <div style='margin: 10px 0;'>
-                    <div style='display: flex; justify-content: space-between; color: #aaa; font-size: 13px;'>
-                        <span>{name}</span>
-                        <span style='color: {color}; font-weight: bold;'>{value:.0f}%</span>
-                    </div>
-                    <div style='background: rgba(255,255,255,0.1); border-radius: 10px; height: 15px; overflow: hidden;'>
-                        <div style='width: {value}%; height: 100%;
-                                    background: linear-gradient(90deg, {color}, {color}88);
-                                    border-radius: 10px;'></div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-
-    # Top o'yinchilar statistikasi
-    st.markdown("<div class='green-divider'></div>", unsafe_allow_html=True)
-    st.markdown("### 🌟 Top O'yinchilar Tahlili")
-
-    stat_choice = st.selectbox("Statistika turi:", ["OVR", "pace", "shooting", "passing", "dribbling", "defending"])
-    top_n = st.slider("Ko'rsatish soni:", 5, 30, 15)
-
-    top_players = sorted(PLAYERS_DATA, key=lambda x: x[stat_choice], reverse=True)[:top_n]
-
-    df_top = pd.DataFrame(top_players)[["name", "position", "ovr", stat_choice, "team"]]
-    df_top.columns = ["Ism", "Pozitsiya", "OVR", stat_choice.title(), "Jamoa"]
-
-    fig_top = px.bar(
-        df_top,
-        x="Ism",
-        y=stat_choice.title(),
-        color="Pozitsiya",
-        title=f"Top {top_n} O'yinchi - {stat_choice.title()} bo'yicha",
-        text=stat_choice.title()
-    )
-    fig_top.update_layout(
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0.3)",
-        font_color="white",
-        title_font_color="#00FF88",
-        xaxis_tickangle=-45
-    )
-    st.plotly_chart(fig_top, use_container_width=True)
-
-
-# ═══════════════════════════════════════════════════════════════
-#  HODISALAR TAQVIMI
-# ═══════════════════════════════════════════════════════════════
-
-elif page == "events":
-    st.markdown("""
-    <div class='section-header'>📅 Hodisalar Taqvimi</div>
-    """, unsafe_allow_html=True)
-
-    # Filtr
-    status_filter = st.radio("Status:", ["Hammasi", "Active", "Coming Soon", "Seasonal", "Past"], horizontal=True)
-
-    filtered_events = EVENTS
-    if status_filter != "Hammasi":
-        filtered_events = [e for e in EVENTS if e["status"] == status_filter]
-
-    # Hodisalar ko'rinishi
-    for event in filtered_events:
-        status_colors = {
-            "Active": "#00B050",
-            "Coming Soon": "#FFD700",
-            "Seasonal": "#0088FF",
-            "Past": "#666666"
-        }
-        status_color = status_colors.get(event["status"], "#888")
-        status_bg = f"{status_color}22"
-
-        st.markdown(f"""
-        <div style='background: rgba(20,30,50,0.8); border: 1px solid {status_color}44;
-                    border-left: 4px solid {status_color}; border-radius: 12px;
-                    padding: 18px; margin: 10px 0;'>
-            <div style='display: flex; justify-content: space-between; align-items: flex-start;'>
-                <div style='flex: 1;'>
-                    <div style='display: flex; align-items: center; gap: 10px; margin-bottom: 8px;'>
-                        <span style='font-size: 24px;'>{event["icon"]}</span>
-                        <span style='font-size: 18px; font-weight: bold; color: white;'>{event["name"]}</span>
-                        <span style='background: {status_bg}; color: {status_color};
-                                     border: 1px solid {status_color}44; padding: 2px 10px;
-                                     border-radius: 15px; font-size: 12px; font-weight: bold;'>
-                            {event["status"]}
-                        </span>
-                    </div>
-                    <div style='color: #aaaaaa; font-size: 13px; margin-bottom: 8px; line-height: 1.5;'>
-                        {event["description"]}
-                    </div>
-                    <div style='display: flex; gap: 20px; flex-wrap: wrap;'>
-                        <span style='color: #888; font-size: 12px;'>
-                            🎯 <b style='color: #aaa;'>Tur:</b> {event["type"]}
-                        </span>
-                        <span style='color: #888; font-size: 12px;'>
-                            📅 <b style='color: #aaa;'>Tugash:</b> {event["end_date"]}
-                        </span>
-                    </div>
-                </div>
-                <div style='min-width: 200px; margin-left: 20px;'>
-                    <div style='color: #FFD700; font-size: 12px; font-weight: bold; margin-bottom: 5px;'>
-                        🏆 Mukofotlar:
-                    </div>
-                    <div style='color: #ccc; font-size: 12px;'>{event["rewards"]}</div>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # Taqvim vizualizatsiyasi
-    st.markdown("<div class='green-divider'></div>", unsafe_allow_html=True)
-    st.markdown("### 📆 Haftalik Jadval")
-
-    days = ["Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba", "Yakshanba"]
-    weekly_events = {
-        "Dushanba": ["Daily Training reset", "VS Attack match"],
-        "Seshanba": ["Division Rivals", "Daily Quests"],
-        "Chorshanba": ["Team of the Week yangilanadi", "VS Attack"],
-        "Payshanba": ["League tournament", "Daily Training"],
-        "Juma": ["Division Rivals", "Event coins yig'ish"],
-        "Shanba": ["League vs League", "VS Attack", "Head to Head"],
-        "Yakshanba": ["Weekly reset", "Mukofotlar olish", "Yangi mavsumga tayyorlik"],
-    }
-
-    day_cols = st.columns(7)
-    for i, (day, col) in enumerate(zip(days, day_cols)):
-        with col:
-            is_today = i == datetime.now().weekday()
-            bg_color = "rgba(0,176,80,0.3)" if is_today else "rgba(255,255,255,0.05)"
-            border_color = "#00B050" if is_today else "rgba(255,255,255,0.1)"
-
-            events_html = "".join([f'<div style="font-size: 10px; color: #ccc; margin: 2px 0; padding: 3px 5px; background: rgba(0,0,0,0.3); border-radius: 4px;">{e}</div>' for e in weekly_events.get(day, [])])
-
-            st.markdown(f"""
-            <div style='background: {bg_color}; border: 1px solid {border_color};
-                        border-radius: 10px; padding: 10px; min-height: 150px;'>
-                <div style='color: {"#00FF88" if is_today else "#aaa"}; font-size: 12px;
-                            font-weight: bold; margin-bottom: 8px; text-align: center;'>
-                    {day[:3]}{"🟢" if is_today else ""}
-                </div>
-                {events_html}
-            </div>
-            """, unsafe_allow_html=True)
-
-
-# ═══════════════════════════════════════════════════════════════
-#  MASLAHATLAR
-# ═══════════════════════════════════════════════════════════════
-
-elif page == "tips":
-    st.markdown("""
-    <div class='section-header'>💡 Maslahatlar va Hiylalar</div>
-    """, unsafe_allow_html=True)
-
-    level_tab1, level_tab2, level_tab3 = st.tabs([
-        "🌱 Yangi boshlovchi", "⚽ O'rta daraja", "🔥 Ilg'or"
-    ])
-
-    for tab, level_name in zip([level_tab1, level_tab2, level_tab3],
-                                 ["Yangi boshlovchilar", "O'rta daraja", "Ilg'or darajadagi"]):
-        with tab:
-            tips = TIPS_AND_TRICKS[level_name]
-            for i, tip in enumerate(tips, 1):
-                st.markdown(f"""
-                <div style='background: rgba(0,176,80,0.1); border: 1px solid rgba(0,176,80,0.3);
-                            border-radius: 10px; padding: 15px; margin: 8px 0;
-                            display: flex; align-items: flex-start; gap: 12px;'>
-                    <div style='background: #00B050; color: black; font-weight: bold; font-size: 14px;
-                                min-width: 28px; height: 28px; border-radius: 50%;
-                                display: flex; align-items: center; justify-content: center;'>{i}</div>
-                    <div style='color: #cccccc; font-size: 14px; line-height: 1.5;'>{tip}</div>
-                </div>
-                """, unsafe_allow_html=True)
-
-    # Qo'shimcha strategik maslahatlar
-    st.markdown("<div class='green-divider'></div>", unsafe_allow_html=True)
-    st.markdown("### 🎯 Strategik Maslahatlar")
-
-    strategy_tabs = st.tabs(["⚔️ Hujum", "🛡️ Himoya", "💰 Resurslar", "🏆 Division Rises"])
-
-    with strategy_tabs[0]:
-        st.markdown("""
-        <div class='glass-card'>
-        <h4 style='color: #FF4444;'>⚔️ Hujum Strategiyalari</h4>
-
-        <div style='color: #ccc; line-height: 2;'>
-        🔹 <b style='color: #00FF88;'>Tezkor qanotdan hujum:</b> Tez wingerlarga ega bo'ling va kross bering<br>
-        🔹 <b style='color: #00FF88;'>Skill moves:</b> Penalty boxga kirishdan oldin bir skill moves ishlating<br>
-        🔹 <b style='color: #00FF88;'>Through pass:</b> Himoya chizig'i orqasiga tushiruvchi pas muhim<br>
-        🔹 <b style='color: #00FF88;'>Far post cross:</b> Far post'ga kross berish katta imkoniyat yaratadi<br>
-        🔹 <b style='color: #00FF88;'>Low driven shot:</b> 1-on-1 da low driven shot eng xavfli<br>
-        🔹 <b style='color: #00FF88;'>Set pieces:</b> Corner va free kick'larni yaxshi bajarish uchun mashq qiling<br>
-        🔹 <b style='color: #00FF88;'>Finesse shot:</b> Penalty box ichida finesse shot ishlating<br>
-        🔹 <b style='color: #00FF88;'>Counter attack:</b> Himoyada top olganingizdan so'ng tezkor kontr-hujum
-        </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with strategy_tabs[1]:
-        st.markdown("""
-        <div class='glass-card'>
-        <h4 style='color: #0088FF;'>🛡️ Himoya Strategiyalari</h4>
-
-        <div style='color: #ccc; line-height: 2;'>
-        🔹 <b style='color: #00FF88;'>Pressure applying:</b> High press taktikasi bilan raqibni chalg'iting<br>
-        🔹 <b style='color: #00FF88;'>CDM o'rnini bilish:</b> CDM midfield markazda turishi kerak<br>
-        🔹 <b style='color: #00FF88;'>Cover space:</b> Raqib wingerlarga yo'l bermang<br>
-        🔹 <b style='color: #00FF88;'>CB xususiyatlari:</b> "Dives Into Tackles" trait ga ega CBlar tanlang<br>
-        🔹 <b style='color: #00FF88;'>Jismoniy himoya:</b> Yuqori physicality ga ega himoyachilar<br>
-        🔹 <b style='color: #00FF88;'>Penalty box nazorati:</b> Corner va free kick'da CB ni forward qo'ying<br>
-        🔹 <b style='color: #00FF88;'>GK tanlov:</b> Reflexes va Positioning yuqori GK kerak<br>
-        🔹 <b style='color: #00FF88;'>Line nazorat:</b> Offsayd tuzoqdan foydalaning
-        </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with strategy_tabs[2]:
-        st.markdown("""
-        <div class='glass-card'>
-        <h4 style='color: #FFD700;'>💰 Resurslarni Boshqarish</h4>
-
-        <div style='color: #ccc; line-height: 2;'>
-        🔹 <b style='color: #00FF88;'>Diamonds tejash:</b> Sale va event paytida diamonds sarflang<br>
-        🔹 <b style='color: #00FF88;'>Coins boshqarish:</b> Transferga investitsiya qiling, pack'ga emas<br>
-        🔹 <b style='color: #00FF88;'>Daily login:</b> Har kuni kirish bonuslarini to'plang<br>
-        🔹 <b style='color: #00FF88;'>Quest bajarish:</b> Daily va Weekly questlar eng yaxshi resurs manbai<br>
-        🔹 <b style='color: #00FF88;'>League bonuslar:</b> Faol ligada bo'lish qo'shimcha bonuslar beradi<br>
-        🔹 <b style='color: #00FF88;'>Event prioriteti:</b> Limited time event'larga maksimal e'tibor bering<br>
-        🔹 <b style='color: #00FF88;'>Skill boost tejash:</b> Muhim kartalar uchun skill boostlarni tejalang<br>
-        🔹 <b style='color: #00FF88;'>Pack strategiyasi:</b> Guaranteed rare pack'larni oldindan to'plang
-        </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with strategy_tabs[3]:
-        st.markdown("""
-        <div class='glass-card'>
-        <h4 style='color: #9400D3;'>🏆 Division Rivals'da yuqorilash</h4>
-
-        <div style='color: #ccc; line-height: 2;'>
-        🔹 <b style='color: #00FF88;'>Muddatli o'ynash:</b> Haftasiga kamida 5-7 o'yin o'ynang<br>
-        🔹 <b style='color: #00FF88;'>Streak ni saqlab qolish:</b> Win streak mukofotlarni oshiradi<br>
-        🔹 <b style='color: #00FF88;'>Streak yo'qolganida:</b> 2-3 mag'lubiyat ketma-ket kelsa tanaffus oling<br>
-        🔹 <b style='color: #00FF88;'>OVR moslashuv:</b> Division ga mos OVR ga ega bo'ling<br>
-        🔹 <b style='color: #00FF88;'>Formation switch:</b> Har hafta META formatsiyani tekshiring<br>
-        🔹 <b style='color: #00FF88;'>Yulduz tizimi:</b> Yangi star ranking tizimida promotion osonroq<br>
-        🔹 <b style='color: #00FF88;'>Matchmaking:</b> Yaxshi matchmaking uchun to'g'ri vaqtda o'ynang<br>
-        🔹 <b style='color: #00FF88;'>Haftalik mukofot:</b> Har hafta division mukofotini oling
-        </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-
-# ═══════════════════════════════════════════════════════════════
-#  TRANSFER MARKETI
-# ═══════════════════════════════════════════════════════════════
-
-elif page == "transfer":
-    st.markdown("""
-    <div class='section-header'>💰 Transfer Marketi Simulyatori</div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class='glass-card'>
-    <b style='color: #FFD700;'>ℹ️ Transfer Marketi haqida:</b><br>
-    <span style='color: #aaa;'>FC Mobile da o'yinchilarni coins bilan sotib olish va sotish mumkin.
-    Bu yerda o'yinchi narxlarini simulyatsiya qilishingiz mumkin.</span>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Filtr
-    transfer_col1, transfer_col2 = st.columns([3, 1])
-    with transfer_col1:
-        transfer_search = st.text_input("🔍 O'yinchi qidirish:", placeholder="Ism kiriting...")
-    with transfer_col2:
-        max_price = st.number_input("💰 Max narx (M):", min_value=1, max_value=20, value=10)
-
-    # Filterlangan natijalar
-    transfer_players = [p for p in PLAYERS_DATA
-                       if (transfer_search.lower() in p["name"].lower() if transfer_search else True)
-                       and p["price"] <= max_price * 1_000_000]
-    transfer_players = sorted(transfer_players, key=lambda x: x["price"], reverse=True)
-
-    st.markdown(f"**{len(transfer_players)} ta o'yinchi topildi**")
-
-    # Transfer jadval
-    if transfer_players:
-        transfer_data = []
-        for p in transfer_players:
-            price_trend = random.choice(["📈 Oshmoqda", "📉 Tushmoqda", "➡️ Barqaror"])
-            trend_colors = {"📈 Oshmoqda": "#00FF88", "📉 Tushmoqda": "#FF4444", "➡️ Barqaror": "#FFD700"}
-
-            transfer_data.append({
-                "O'yinchi": p["name"],
-                "Pozitsiya": p["position"],
-                "OVR": p["ovr"],
-                "Liga": p["league"],
-                "Narx": format_price(p["price"]),
-                "Trenda": price_trend,
-                "Tur": p["type"]
-            })
-
-        df_transfer = pd.DataFrame(transfer_data)
-        st.dataframe(
-            df_transfer,
-            use_container_width=True,
-            height=500,
-            column_config={
-                "OVR": st.column_config.ProgressColumn(
-                    "OVR",
-                    min_value=90,
-                    max_value=110,
-                    format="%d"
-                )
-            }
-        )
-
-    # Narx tahlili
-    st.markdown("<div class='green-divider'></div>", unsafe_allow_html=True)
-    st.markdown("### 📊 Narx Tahlili")
-
-    price_col1, price_col2 = st.columns(2)
-
-    with price_col1:
-        # Narx vs OVR scatter
-        df_scatter = pd.DataFrame(PLAYERS_DATA)
-        fig_scatter = px.scatter(
-            df_scatter,
-            x="ovr",
-            y="price",
-            color="type",
-            hover_name="name",
-            title="OVR vs Narx",
-            labels={"ovr": "OVR", "price": "Narx (Coins)"},
-            color_discrete_map={"ICON": "#FFD700", "HERO": "#9400D3", "GOLD": "#00B050"}
-        )
-        fig_scatter.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0.3)",
-            font_color="white",
-            title_font_color="#00FF88"
-        )
-        st.plotly_chart(fig_scatter, use_container_width=True)
-
-    with price_col2:
-        # Karta turi bo'yicha o'rtacha narx
-        type_avg_price = {}
-        for p in PLAYERS_DATA:
-            if p["type"] not in type_avg_price:
-                type_avg_price[p["type"]] = []
-            type_avg_price[p["type"]].append(p["price"])
-
-        avg_prices = {k: np.mean(v) for k, v in type_avg_price.items()}
-
-        fig_avg = px.bar(
-            x=list(avg_prices.keys()),
-            y=[v/1_000_000 for v in avg_prices.values()],
-            title="Karta Turi bo'yicha O'rtacha Narx (M Coins)",
-            color=list(avg_prices.keys()),
-            color_discrete_map={"ICON": "#FFD700", "HERO": "#9400D3", "GOLD": "#00B050"},
-            labels={"x": "Karta Turi", "y": "Narx (Millions)"}
-        )
-        fig_avg.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0.3)",
-            font_color="white",
-            title_font_color="#00FF88"
-        )
-        st.plotly_chart(fig_avg, use_container_width=True)
-
-
-# ═══════════════════════════════════════════════════════════════
-#  O'YIN SIMULYATORI
-# ═══════════════════════════════════════════════════════════════
-
-elif page == "simulator":
-    st.markdown("""
-    <div class='section-header'>⚽ O'yin Simulyatori</div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class='glass-card'>
-    Ikki jamoa o'rtasida simulyatsiya o'yini o'ynang. OVR ga asoslangan natijalar.
-    </div>
-    """, unsafe_allow_html=True)
-
-    sim_col1, sim_col2, sim_col3 = st.columns([2, 1, 2])
-
-    with sim_col1:
-        st.markdown("### 🔵 Sizning Jamoangiz")
-        your_team_name = st.text_input("Jamoa nomi:", "FC Mening Jamoam")
-        your_ovr = st.slider("Jamoa OVR:", 80, 120, 105, key="your_ovr")
-        your_formation = st.selectbox("Formatsiya:", list(FORMATIONS.keys()), key="your_form")
-
-        # Jamoa statistikasi
-        st.markdown(f"""
-        <div style='background: rgba(0,136,255,0.1); border: 1px solid #0088FF;
-                    border-radius: 10px; padding: 15px; margin: 10px 0;'>
-            <div style='font-size: 36px; font-weight: bold; color: #0088FF; text-align: center;'>{your_ovr}</div>
-            <div style='color: #aaa; text-align: center;'>OVR</div>
-            <div style='color: #ccc; font-size: 12px; margin-top: 5px;'>Formatsiya: {your_formation}</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with sim_col2:
-        st.markdown("""
-        <div style='display: flex; flex-direction: column; align-items: center;
-                    justify-content: center; height: 200px; font-size: 48px;'>
-            ⚔️<br>
-            <div style='font-size: 24px; color: #FFD700; font-weight: bold;'>VS</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with sim_col3:
-        st.markdown("### 🔴 Raqib Jamoa")
-        opp_teams = [p["team"] for p in PLAYERS_DATA]
-        opp_teams = list(set(opp_teams))
-        opp_team_name = st.selectbox("Raqib jamoa:", sorted(opp_teams))
-        opp_ovr = st.slider("Raqib OVR:", 80, 120, 103, key="opp_ovr")
-        opp_formation = st.selectbox("Raqib formatsiya:", list(FORMATIONS.keys()), key="opp_form")
-
-        ovr_diff = your_ovr - opp_ovr
-        win_prob = min(90, max(10, 50 + ovr_diff * 2.5))
-
-        st.markdown(f"""
-        <div style='background: rgba(255,68,68,0.1); border: 1px solid #FF4444;
-                    border-radius: 10px; padding: 15px; margin: 10px 0;'>
-            <div style='font-size: 36px; font-weight: bold; color: #FF4444; text-align: center;'>{opp_ovr}</div>
-            <div style='color: #aaa; text-align: center;'>OVR</div>
-            <div style='color: #ccc; font-size: 12px; margin-top: 5px;'>Formatsiya: {opp_formation}</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # G'alaba ehtimolligi
-    st.markdown(f"""
-    <div style='background: rgba(255,215,0,0.1); border: 1px solid #FFD700;
-                border-radius: 12px; padding: 15px; text-align: center; margin: 10px 0;'>
-        <div style='color: #aaa;'>G'alaba Ehtimolligi</div>
-        <div style='font-size: 32px; font-weight: bold; color: {"#00FF88" if win_prob >= 50 else "#FF4444"};'>
-            {win_prob:.0f}%
-        </div>
-        <div style='background: rgba(255,255,255,0.1); border-radius: 10px; height: 15px; overflow: hidden; margin: 10px 0;'>
-            <div style='width: {win_prob}%; height: 100%;
-                        background: linear-gradient(90deg, {"#00B050" if win_prob >= 50 else "#FF4444"}, transparent);'></div>
-        </div>
-        <div style='color: #888; font-size: 13px;'>OVR farqi: {ovr_diff:+d}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # O'yin boshlash
-    if st.button("▶️ O'YINNI BOSHLASH", key="start_game"):
-        with st.spinner("O'yin o'ynalmoqda... ⚽"):
-            import time
-            time.sleep(1.5)
-
-        outcome, gf, ga = simulate_match(your_ovr, opp_ovr)
-
-        outcome_colors = {"G'ALABA": "#00FF88", "DURRANG": "#FFD700", "MAG'LUBIYAT": "#FF4444"}
-        outcome_icons = {"G'ALABA": "🏆", "DURRANG": "🤝", "MAG'LUBIYAT": "😢"}
-        oc = outcome_colors.get(outcome, "#888")
-        oi = outcome_icons.get(outcome, "⚽")
-
-        st.markdown(f"""
-        <div style='background: {oc}22; border: 3px solid {oc};
-                    border-radius: 20px; padding: 30px; text-align: center; margin: 20px 0;'>
-            <div style='font-size: 48px;'>{oi}</div>
-            <div style='font-size: 32px; font-weight: bold; color: {oc}; margin: 10px 0;'>{outcome}</div>
-            <div style='font-size: 56px; font-weight: bold; color: white; margin: 10px 0;'>
-                {gf} — {ga}
-            </div>
-            <div style='color: #aaa; font-size: 14px;'>
-                {your_team_name} vs {opp_team_name}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # O'yin statistikasi
-        possession = random.randint(40, 65) if outcome == "G'ALABA" else random.randint(35, 55)
-        shots = gf * random.randint(3, 6) + random.randint(2, 5)
-        shots_on = gf + random.randint(1, 4)
-        corners = random.randint(3, 12)
-        fouls = random.randint(8, 18)
-
-        stat_c1, stat_c2, stat_c3 = st.columns(3)
-        with stat_c1:
-            st.metric("Egalik", f"{possession}% — {100-possession}%")
-            st.metric("Urinishlar", f"{shots} — {random.randint(5,12)}")
-        with stat_c2:
-            st.metric("Darvozaga urinish", f"{shots_on} — {random.randint(2,7)}")
-            st.metric("Burchak zarbalar", f"{corners} — {random.randint(2,8)}")
-        with stat_c3:
-            st.metric("Xatolar", f"{fouls} — {random.randint(8,20)}")
-            st.metric("Sariq kartochka", f"{random.randint(0,3)} — {random.randint(0,4)}")
-
-        # Golchilar
-        if gf > 0:
-            attackers = [p["name"] for p in PLAYERS_DATA if p["position"] in ["ST", "LW", "RW", "CAM"]]
-            scorers = random.sample(attackers, min(gf, len(attackers)))
-            goals_html = ""
-            for i, scorer in enumerate(scorers):
-                minute = random.randint(1, 90)
-                goals_html += f'<div style="color: #ccc; font-size: 13px; margin: 3px 0;">⚽ {scorer} <span style="color: #888;">({minute}\')</span></div>'
-
-            st.markdown(f"""
-            <div style='background: rgba(0,176,80,0.1); border-radius: 10px; padding: 15px; margin: 10px 0;'>
-                <div style='color: #00FF88; font-weight: bold; margin-bottom: 8px;'>⚽ Gol urganlar:</div>
-                {goals_html}
-            </div>
-            """, unsafe_allow_html=True)
-
-
-# ═══════════════════════════════════════════════════════════════
-#  LIGALAR VA JAMOALAR
-# ═══════════════════════════════════════════════════════════════
-
-elif page == "leagues":
-    st.markdown("""
-    <div class='section-header'>🏆 Ligalar va Jamoalar</div>
-    """, unsafe_allow_html=True)
-
-    # Ligalar overview
-    leagues_cols = st.columns(3)
-
-    for i, (league_name, league_data) in enumerate(LEAGUES.items()):
-        with leagues_cols[i % 3]:
-            st.markdown(f"""
-            <div style='background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-                        border-radius: 12px; padding: 20px; margin: 5px 0; text-align: center;
-                        border-top: 3px solid {league_data["color"]};'>
-                <div style='font-size: 18px; font-weight: bold; color: white;'>{league_name}</div>
-                <div style='color: #888; font-size: 12px; margin: 5px 0;'>🌍 {league_data["country"]}</div>
-                <div style='color: #aaa; font-size: 12px;'>👥 {league_data["teams"]} Jamoa</div>
-                <div style='color: #FFD700; font-size: 12px; margin-top: 5px;'>🏆 {league_data["top_team"]}</div>
-            </div>
-            """, unsafe_allow_html=True)
-
-    # Top jamoalar va o'yinchilar
-    st.markdown("<div class='green-divider'></div>", unsafe_allow_html=True)
-    st.markdown("### 🏟️ Jamoalar va Ularning O'yinchilari")
-
-    selected_team = st.selectbox(
-        "Jamoa tanlang:",
-        sorted(list(set([p["team"] for p in PLAYERS_DATA])))
-    )
-
-    team_players = [p for p in PLAYERS_DATA if p["team"] == selected_team]
-    team_players = sorted(team_players, key=lambda x: x["ovr"], reverse=True)
-
-    if team_players:
-        team_avg_ovr = np.mean([p["ovr"] for p in team_players])
-        team_league = team_players[0]["league"]
-
-        t_col1, t_col2, t_col3 = st.columns(3)
-        with t_col1:
-            st.metric("👥 O'yinchilar soni", len(team_players))
-        with t_col2:
-            st.metric("📊 O'rtacha OVR", f"{team_avg_ovr:.0f}")
-        with t_col3:
-            st.metric("🏆 Liga", team_league)
-
-        # Jamoa o'yinchilar
-        t_cols = st.columns(min(4, len(team_players)))
-        for i, (player, col) in enumerate(zip(team_players[:8], t_cols * 2)):
-            with col:
-                ovr_color = get_ovr_color(player["ovr"])
-                st.markdown(f"""
-                <div style='background: {ovr_color}11; border: 1px solid {ovr_color}33;
-                            border-radius: 10px; padding: 12px; text-align: center; margin: 3px 0;'>
-                    <div style='font-size: 22px; font-weight: bold; color: {ovr_color};'>{player["ovr"]}</div>
-                    <div style='font-size: 13px; color: white; font-weight: bold;'>{player["name"]}</div>
-                    <div style='font-size: 11px; color: #888;'>{player["position"]}</div>
-                    <div style='font-size: 11px; color: {ovr_color}88; margin-top: 3px;'>{player["type"]}</div>
-                </div>
-                """, unsafe_allow_html=True)
-
-        # Jamoa statistika grafigi
-        if len(team_players) >= 3:
-            avg_stats = {
-                "Tezlik": np.mean([p["pace"] for p in team_players]),
-                "Udarish": np.mean([p["shooting"] for p in team_players]),
-                "Pas": np.mean([p["passing"] for p in team_players]),
-                "Dribbling": np.mean([p["dribbling"] for p in team_players]),
-                "Himoya": np.mean([p["defending"] for p in team_players]),
-                "Jismoniy": np.mean([p["physical"] for p in team_players]),
-            }
-
-            fig_team = go.Figure()
-            fig_team.add_trace(go.Scatterpolar(
-                r=list(avg_stats.values()),
-                theta=list(avg_stats.keys()),
-                fill='toself',
-                fillcolor='rgba(0,176,80,0.2)',
-                line=dict(color='#00B050', width=2),
-                name=selected_team
-            ))
-            fig_team.update_layout(
-                polar=dict(radialaxis=dict(range=[0, 100], color="#666")),
-                paper_bgcolor="rgba(0,0,0,0)",
-                font_color="white",
-                title=f"{selected_team} - O'rtacha Statistika",
-                title_font_color="#00FF88"
-            )
-            st.plotly_chart(fig_team, use_container_width=True)
-
-
-# ═══════════════════════════════════════════════════════════════
-#  SOZLAMALAR
-# ═══════════════════════════════════════════════════════════════
-
-elif page == "settings":
-    st.markdown("""
-    <div class='section-header'>🔧 Sozlamalar</div>
-    """, unsafe_allow_html=True)
-
-    set_col1, set_col2 = st.columns(2)
-
-    with set_col1:
-        st.markdown("### 👤 Profil Sozlamalari")
-        username = st.text_input("🎮 FC Mobile username:", placeholder="Username kiriting")
-        favorite_team = st.selectbox("❤️ Sevimli jamoa:", ["— Tanlang —"] + sorted(list(set([p["team"] for p in PLAYERS_DATA]))))
-        favorite_formation = st.selectbox("📐 Sevimli formatsiya:", list(FORMATIONS.keys()))
-        player_level = st.selectbox("📈 O'yin darajasi:", ["Yangi boshlovchi", "O'rta", "Ilg'or", "Pro"])
-        preferred_mode = st.selectbox("🎮 Sevimli rejim:", list(GAME_MODES.keys()))
-
-        if st.button("💾 Profilni saqlash"):
-            st.success(f"✅ {username} profili saqlandi!")
-            st.markdown(f"""
-            <div class='glass-card'>
-                <div style='color: #00FF88; font-weight: bold;'>Profil ma'lumotlari:</div>
-                <div style='color: #aaa; font-size: 13px;'>
-                    👤 Username: {username or "Kiritilmagan"}<br>
-                    ❤️ Jamoa: {favorite_team}<br>
-                    📐 Formatsiya: {favorite_formation}<br>
-                    📈 Daraja: {player_level}<br>
-                    🎮 Rejim: {preferred_mode}
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-    with set_col2:
-        st.markdown("### ⚙️ Ilova Sozlamalari")
-
-        show_animations = st.toggle("✨ Animatsiyalar", value=True)
-        dark_mode = st.toggle("🌙 Qorong'u rejim", value=True)
-        show_prices = st.toggle("💰 Narxlarni ko'rsatish", value=True)
-        auto_refresh = st.toggle("🔄 Avtomatik yangilash", value=False)
-        sound_effects = st.toggle("🔊 Tovush effektlari", value=False)
-
-        st.markdown("---")
-        st.markdown("### 📊 Ilova Statistikasi")
-        st.markdown(f"""
-        <div class='glass-card'>
-            <div style='color: #aaa; font-size: 13px; line-height: 2;'>
-                📅 Sana: <b style='color: #00FF88;'>{datetime.now().strftime('%Y-%m-%d')}</b><br>
-                ⏰ Vaqt: <b style='color: #00FF88;'>{datetime.now().strftime('%H:%M:%S')}</b><br>
-                📦 Versiya: <b style='color: #FFD700;'>FC Mobile 26 Companion v2.6</b><br>
-                👥 O'yinchilar bazasi: <b style='color: #00B050;'>{len(PLAYERS_DATA)} ta</b><br>
-                📐 Formatsiyalar: <b style='color: #00B050;'>{len(FORMATIONS)} ta</b><br>
-                🎮 O'yin rejimlari: <b style='color: #00B050;'>{len(GAME_MODES)} ta</b><br>
-                📅 Hodisalar: <b style='color: #00B050;'>{len(EVENTS)} ta</b>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # Haqida
-    st.markdown("<div class='green-divider'></div>", unsafe_allow_html=True)
-    st.markdown("### ℹ️ Ilova Haqida")
-
-    st.markdown("""
-    <div style='background: linear-gradient(135deg, rgba(0,176,80,0.1), rgba(0,48,135,0.1));
-                border: 1px solid rgba(0,176,80,0.3); border-radius: 15px; padding: 25px; text-align: center;'>
-        <div style='font-size: 50px; margin-bottom: 10px;'>⚽</div>
-        <div style='font-size: 22px; font-weight: bold; color: #00FF88;'>FC Mobile 26 Companion App</div>
-        <div style='color: #aaa; margin: 10px 0;'>EA Sports FC Mobile 26 o'yini uchun to'liq hamroh dastur</div>
-        <div style='color: #666; font-size: 12px;'>
-            Python + Streamlit bilan yaratilgan<br>
-            Ma'lumotlar: EA Sports rasmiy sahifasidan<br>
-            Versiya 2.6.0 | 2025-2026
-        </div>
-        <div style='margin-top: 15px;'>
-            <span style='background: rgba(0,176,80,0.2); color: #00B050; padding: 4px 12px; border-radius: 15px; margin: 3px; font-size: 12px;'>Python</span>
-            <span style='background: rgba(255,75,75,0.2); color: #FF4B4B; padding: 4px 12px; border-radius: 15px; margin: 3px; font-size: 12px;'>Streamlit</span>
-            <span style='background: rgba(99,110,250,0.2); color: #636EFA; padding: 4px 12px; border-radius: 15px; margin: 3px; font-size: 12px;'>Plotly</span>
-            <span style='background: rgba(255,215,0,0.2); color: #FFD700; padding: 4px 12px; border-radius: 15px; margin: 3px; font-size: 12px;'>Pandas</span>
         </div>
     </div>
-    """, unsafe_allow_html=True)
-
-
-# ═══════════════════════════════════════════════════════════════
-#  FOOTER
-# ═══════════════════════════════════════════════════════════════
-
-st.markdown("""
-<div class='footer'>
-    <div style='height: 1px; background: linear-gradient(90deg, transparent, #00B050, transparent);
-                margin-bottom: 15px;'></div>
-    <div style='color: #444; font-size: 13px;'>
-        ⚽ EA Sports FC Mobile 26 Companion App | Python + Streamlit bilan yaratilgan
-        <br>
-        Bu ilova rasmiy EA Sports mahsuloti emas. Fan tomonidan yaratilgan.
+    <div class="fc-currencies">
+        <div class="fc-coin">
+            <span style="font-size:14px;">🪙</span>
+            <span class="fc-coin-val">{fmt_price(st.session_state.coins)}</span>
+            <span style="color:#22c55e;font-size:12px;font-weight:700;">+</span>
+        </div>
+        <div class="fc-gem">
+            <span style="font-size:14px;">💎</span>
+            <span class="fc-gem-val">{st.session_state.gems:,}</span>
+            <span style="color:#22c55e;font-size:12px;font-weight:700;">+</span>
+        </div>
+        <div style="font-size:18px;cursor:pointer;">⚙️</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
+
+
+# ══════════════════════════════════════════════════
+#  NAV BUTTONS (Streamlit)
+# ══════════════════════════════════════════════════
+nav_pages = [
+    ("home",     "🏠", "HOME"),
+    ("myteam",   "⚽", "CLUB"),
+    ("market",   "💰", "MARKET"),
+    ("draft",    "📦", "DRAFT"),
+    ("exchange", "🔄", "EXCHANGE"),
+    ("store",    "🛒", "STORE"),
+    ("quests",   "🎯", "QUESTS"),
+    ("leagues",  "🤝", "LEAGUES"),
+]
+
+nav_cols = st.columns(len(nav_pages))
+for col, (p_key, icon, label) in zip(nav_cols, nav_pages):
+    with col:
+        is_active = st.session_state.page == p_key
+        if st.button(
+            f"{icon}\n{label}" if is_active else f"{icon}\n{label}",
+            key=f"nav_{p_key}",
+            help=label
+        ):
+            st.session_state.page = p_key
+            st.rerun()
+
+st.markdown("""
+<style>
+div[data-testid="column"] .stButton > button {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 2px solid transparent !important;
+    color: #6b7280 !important;
+    border-radius: 0 !important;
+    padding: 6px 4px !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.5px !important;
+    white-space: pre-line !important;
+    line-height: 1.2 !important;
+    width: 100% !important;
+    box-shadow: none !important;
+}
+div[data-testid="column"] .stButton > button:hover {
+    color: #22c55e !important;
+    background: rgba(34,197,94,0.06) !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# Highlight active nav
+active_page = st.session_state.page
+nav_idx = [p[0] for p in nav_pages].index(active_page) if active_page in [p[0] for p in nav_pages] else 0
+st.markdown(f"""
+<style>
+div[data-testid="column"]:nth-child({nav_idx + 1}) .stButton > button {{
+    color: #22c55e !important;
+    border-bottom: 2px solid #22c55e !important;
+    background: rgba(34,197,94,0.06) !important;
+}}
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown('<div class="fc-page">', unsafe_allow_html=True)
+
+
+# ══════════════════════════════════════════════════════════════════
+#  HOME PAGE
+# ══════════════════════════════════════════════════════════════════
+if st.session_state.page == "home":
+
+    # Main banner
+    st.markdown("""
+    <div class="home-banner">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
+            <div>
+                <div style="font-size:12px;color:#22c55e;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">
+                    🔥 HOT EVENT
+                </div>
+                <div class="home-banner-title">CAPPED<br>LEGENDS</div>
+                <div class="home-banner-sub">Legendary players. Iconic moments.<br>Draft now to build your dream squad.</div>
+                <div class="go-now-btn">GO NOW →</div>
+            </div>
+            <div style="display:flex;gap:12px;">
+                <div style="text-align:center;">
+                    <div style="font-size:40px;">🏃</div>
+                    <div style="font-size:10px;color:#9ca3af;font-weight:700;">117 LB</div>
+                    <div style="font-size:11px;color:#f0f0f0;font-weight:800;">COLE</div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-size:40px;">🤌</div>
+                    <div style="font-size:10px;color:#fbbf24;font-weight:700;">117 RW</div>
+                    <div style="font-size:11px;color:#f0f0f0;font-weight:800;">MARADONA</div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-size:40px;">🛡️</div>
+                    <div style="font-size:10px;color:#9ca3af;font-weight:700;">117 CB</div>
+                    <div style="font-size:11px;color:#f0f0f0;font-weight:800;">CANNAVARO</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # CLUB + PLAY cards
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown(f"""
+        <div class="club-card" style="cursor:pointer;">
+            <div>
+                <div style="font-size:9px;color:#6b7280;font-weight:700;letter-spacing:1px;margin-bottom:2px;">CLUB</div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <div class="fc-ovr-badge">{MY_TEAM['ovr']}</div>
+                    <div>
+                        <div style="font-size:11px;color:#9ca3af;">OVR</div>
+                        <div style="font-size:13px;font-weight:700;color:#f0f0f0;">{MY_TEAM['club']}</div>
+                    </div>
+                </div>
+            </div>
+            <div style="font-size:28px;margin-left:auto;">{MY_TEAM['club_emoji']}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with c2:
+        st.markdown("""
+        <div class="play-card">
+            <div class="play-card-title">PLAY</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px;">Start a Match</div>
+            <div style="font-size:24px;margin-top:4px;">⚽</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown('<div class="fc-section-title">📋 ACTIVITIES</div><div class="fc-section-line"></div>', unsafe_allow_html=True)
+
+    activities = [
+        ("🎫", "CAPPED LEGENDS DRAFT", "4 Days left", "#f59e0b"),
+        ("⚔️", "VS ATTACK",            "Season 47",   "#3b82f6"),
+        ("🌙", "RAMADAN SPECIAL",       "Festive Event","#a855f7"),
+        ("⭐", "STAR PASS",             "Season ongoing","#22c55e"),
+        ("⏱️", "EXTRA TIME",           "Phase 2",     "#06b6d4"),
+        ("🏆", "BONUS REWARDS",         "Daily reset", "#fbbf24"),
+    ]
+    for icon, name, sub, color in activities:
+        st.markdown(f"""
+        <div class="activity-item">
+            <div style="font-size:28px;min-width:40px;text-align:center;">{icon}</div>
+            <div>
+                <div style="font-size:13px;font-weight:700;color:#f0f0f0;">{name}</div>
+                <div style="font-size:11px;color:#6b7280;">{sub}</div>
+            </div>
+            <div style="margin-left:auto;color:{color};font-size:16px;">›</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Bottom bar items
+    st.markdown('<div class="fc-section-title">🗓️ TODAY\'S SCHEDULE</div><div class="fc-section-line"></div>', unsafe_allow_html=True)
+
+    events_today = [
+        ("🔄", "Division Rivals reset",  "12:00 UTC"),
+        ("📊", "Team of the Week",        "Wednesday"),
+        ("🏆", "League Tournament",       "19:00 UTC"),
+        ("🎁", "Daily Login Bonus",       "Now"),
+    ]
+    cols_ev = st.columns(4)
+    for col, (ico, name, time_) in zip(cols_ev, events_today):
+        with col:
+            st.markdown(f"""
+            <div style="background:#111520;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px;text-align:center;">
+                <div style="font-size:22px;">{ico}</div>
+                <div style="font-size:11px;font-weight:700;color:#f0f0f0;margin:4px 0;">{name}</div>
+                <div style="font-size:10px;color:#22c55e;">{time_}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+
+# ══════════════════════════════════════════════════════════════════
+#  MY TEAM / CLUB PAGE
+# ══════════════════════════════════════════════════════════════════
+elif st.session_state.page == "myteam":
+
+    tab_team, tab_reserves, tab_edit = st.tabs(["⚽ MY TEAM", "🔄 RESERVES", "✏️ TEAM EDITING"])
+
+    with tab_team:
+        # Left panel
+        lc, rc = st.columns([1, 3])
+
+        with lc:
+            st.markdown(f"""
+            <div class="fc-team-panel">
+                <div style="font-size:11px;color:#6b7280;font-weight:700;letter-spacing:1px;">MY TEAM</div>
+                <div style="display:flex;align-items:center;gap:10px;margin:6px 0;">
+                    <div style="font-size:28px;">{MY_TEAM['club_emoji']}</div>
+                    <div class="fc-ovr-badge">
+                        <div>
+                            <div>{MY_TEAM['ovr']}</div>
+                            <div class="fc-ovr-label">OVR</div>
+                        </div>
+                    </div>
+                </div>
+                <div style="font-size:13px;font-weight:700;color:#22c55e;">{MY_TEAM['formation']}</div>
+                <div class="fc-coins-row">🪙 {fmt_price(MY_TEAM['coins'])}</div>
+                <div style="display:flex;gap:6px;margin-top:4px;">
+                    {"".join([f'<span style="font-size:18px;">{b}</span>' for b in MY_TEAM['badges']])}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+
+            for btn_label in ["🔄 AUTO BUILD", "👥 RESERVES", "⚙️ TEAM EDITING"]:
+                st.button(btn_label, key=f"team_btn_{btn_label}")
+
+        with rc:
+            # Pitch — 3-4-3 Diamond layout
+            st.markdown("""
+            <div style="font-size:12px;color:#6b7280;font-weight:700;letter-spacing:1px;padding:8px 0 4px;">
+                3-4-3 DIAMOND FORMATION
+            </div>
+            """, unsafe_allow_html=True)
+
+            # Formation rows: ATT(3) → MID(4) → DEF(3) → GK(1)
+            layers = [
+                ("⚔️ ATTACK",   [p for p in MY_TEAM["players"] if p["pos"] in ["LW","ST","RW"]]),
+                ("🎯 MIDFIELD",  [p for p in MY_TEAM["players"] if p["pos"] in ["LM","CDM","CAM","RM"]]),
+                ("🛡️ DEFENCE",  [p for p in MY_TEAM["players"] if p["pos"] in ["CB","LB","RB"]]),
+                ("🧤 KEEPER",    [p for p in MY_TEAM["players"] if p["pos"] == "GK"]),
+            ]
+
+            for layer_name, layer_players in layers:
+                if not layer_players:
+                    continue
+                st.markdown(f"""
+                <div style="font-size:9px;color:rgba(255,255,255,0.2);text-align:center;
+                            letter-spacing:2px;font-weight:700;margin:4px 0 2px;">{layer_name}</div>
+                """, unsafe_allow_html=True)
+
+                field_cols = st.columns(len(layer_players))
+                for col, player in zip(field_cols, layer_players):
+                    with col:
+                        bc, bg, ovr_c = get_card_colors(player["type"])
+                        pos_cls = get_pos_class(player["pos"])
+                        pos_colors = {"pos-att": "#ef4444", "pos-mid": "#22c55e", "pos-def": "#3b82f6", "pos-gk": "#eab308"}
+                        pos_bg = pos_colors.get(pos_cls, "#6b7280")
+
+                        if st.button(
+                            f"{player['emoji']}\n{player['ovr']}\n{player['name'][:8]}",
+                            key=f"field_{player['name']}",
+                            help=f"{player['name']} | {player['pos']} | OVR {player['ovr']}"
+                        ):
+                            st.session_state.selected_player = player
+                            st.rerun()
+
+                        st.markdown(f"""
+                        <style>
+                        div[data-testid="column"] button[title="{player['name']} | {player['pos']} | OVR {player['ovr']}"] {{
+                            background: {bg} !important;
+                            border: 1.5px solid {bc} !important;
+                            color: {ovr_c} !important;
+                            border-radius: 8px !important;
+                            font-size: 10px !important;
+                            padding: 4px !important;
+                            white-space: pre-line !important;
+                            line-height: 1.2 !important;
+                            min-height: 64px !important;
+                        }}
+                        </style>
+                        """, unsafe_allow_html=True)
+
+            # Selected player panel
+            if st.session_state.selected_player:
+                p = st.session_state.selected_player
+                bc, bg, ovr_c = get_card_colors(p["type"])
+                st.markdown("<div class='fc-section-line' style='margin:12px 0 8px;'></div>", unsafe_allow_html=True)
+                sel_c1, sel_c2 = st.columns([1, 2])
+                with sel_c1:
+                    st.markdown(f"""
+                    <div style="background:{bg};border:2px solid {bc};border-radius:14px;
+                                padding:20px 14px;text-align:center;
+                                box-shadow:0 0 20px {bc}44;">
+                        <div style="font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:1px;">{p['pos']}</div>
+                        <div style="font-size:44px;font-weight:900;color:{ovr_c};font-family:'Barlow Condensed',sans-serif;">{p['ovr']}</div>
+                        <div style="font-size:48px;margin:8px 0;">{p.get('emoji','⚽')}</div>
+                        <div style="font-size:16px;font-weight:800;color:#f0f0f0;text-transform:uppercase;">{p['name']}</div>
+                        <div style="font-size:12px;color:#6b7280;margin-top:4px;">{p.get('nat','')} {p.get('club','')}</div>
+                        <div style="font-size:13px;color:#fbbf24;margin-top:6px;">Rank {p.get('rank',30)} ⭐</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                with sel_c2:
+                    for action in ["⇄ SWAP", "ℹ️ DETAILS", "🏋️ TRAINING", "⬆️ RANK UP", "🔀 TRAINING TRANSFER"]:
+                        st.button(action, key=f"player_action_{action}")
+
+    with tab_reserves:
+        st.markdown('<div class="fc-section-title">👥 RESERVES</div><div class="fc-section-line"></div>', unsafe_allow_html=True)
+
+        # Filter
+        f1, f2, f3 = st.columns([2, 1, 1])
+        with f1:
+            reserve_search = st.text_input("🔍", placeholder="Search player...", label_visibility="collapsed")
+        with f2:
+            sort_res = st.selectbox("Sort", ["OVR ↓", "OVR ↑", "Name"], label_visibility="collapsed")
+        with f3:
+            pos_filter = st.selectbox("Position", ["All", "GK", "CB", "CM", "ST", "LW", "RW"], label_visibility="collapsed")
+
+        filtered_reserves = RESERVES.copy()
+        if reserve_search:
+            filtered_reserves = [p for p in filtered_reserves if reserve_search.upper() in p["name"]]
+        if pos_filter != "All":
+            filtered_reserves = [p for p in filtered_reserves if p["pos"] == pos_filter]
+        if sort_res == "OVR ↓":
+            filtered_reserves.sort(key=lambda x: x["ovr"], reverse=True)
+        elif sort_res == "OVR ↑":
+            filtered_reserves.sort(key=lambda x: x["ovr"])
+        else:
+            filtered_reserves.sort(key=lambda x: x["name"])
+
+        r_cols = st.columns(4)
+        for i, player in enumerate(filtered_reserves):
+            with r_cols[i % 4]:
+                st.markdown(render_player_card(player), unsafe_allow_html=True)
+
+    with tab_edit:
+        st.markdown('<div class="fc-section-title">✏️ TEAM EDITING</div><div class="fc-section-line"></div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div style="background:#111520;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:20px;margin:16px;">
+            <div style="font-size:14px;color:#9ca3af;line-height:1.8;">
+            ⚽ <b style="color:#f0f0f0;">Formation:</b> 3-4-3 Diamond<br>
+            📋 <b style="color:#f0f0f0;">Instructions:</b> High Press, Short Passing<br>
+            🏃 <b style="color:#f0f0f0;">Attacking:</b> Fast Build-Up, Width<br>
+            🛡️ <b style="color:#f0f0f0;">Defending:</b> Press After Possession Loss<br>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        edit_c1, edit_c2 = st.columns(2)
+        with edit_c1:
+            st.selectbox("Formation", list(["3-4-3 Diamond","4-3-3","4-2-3-1","3-5-2","4-4-2"]))
+            st.selectbox("Pressing Style", ["High Press","Mid Block","Low Block","Counter Press"])
+            st.selectbox("Build-Up Play", ["Fast","Balanced","Slow"])
+        with edit_c2:
+            st.selectbox("Attacking Width", ["Wide","Normal","Narrow"])
+            st.selectbox("Defensive Line", ["High","Medium","Low"])
+            st.selectbox("Pressing Trigger", ["After Possession Loss","First Touch","Goalkeeper"])
+        st.button("💾 SAVE TACTICS", key="save_tactics")
+
+
+# ══════════════════════════════════════════════════════════════════
+#  TRANSFER MARKET
+# ══════════════════════════════════════════════════════════════════
+elif st.session_state.page == "market":
+
+    mkt_tab1, mkt_tab2, mkt_tab3, mkt_tab4, mkt_tab5 = st.tabs([
+        "⭐ RECOMMENDED", "👤 MY PLAYERS", "👁️ WATCHLIST", "📋 MY ORDERS", "🔍 SEARCH"
+    ])
+
+    with mkt_tab1:
+        mc1, mc2 = st.columns([3, 1])
+
+        with mc1:
+            st.markdown('<div class="fc-section-title">📊 RECOMMENDED PLAYERS</div><div class="fc-section-line"></div>', unsafe_allow_html=True)
+
+            # Sort & filter row
+            sf1, sf2, sf3 = st.columns([2, 1, 1])
+            with sf1:
+                mkt_search = st.text_input("🔍", placeholder="Search transfer market...", label_visibility="collapsed", key="mkt_search")
+            with sf2:
+                mkt_sort = st.selectbox("Sort", ["OVR ↓", "Price ↓", "Price ↑"], label_visibility="collapsed", key="mkt_sort")
+            with sf3:
+                mkt_pos = st.selectbox("Pos", ["All","GK","CB","CM","ST","LW","RW"], label_visibility="collapsed", key="mkt_pos")
+
+            # Filter
+            mkt_players = MARKET_PLAYERS.copy()
+            if mkt_search:
+                mkt_players = [p for p in mkt_players if mkt_search.upper() in p["name"]]
+            if mkt_pos != "All":
+                mkt_players = [p for p in mkt_players if p["pos"] == mkt_pos]
+            if mkt_sort == "OVR ↓":
+                mkt_players.sort(key=lambda x: x["ovr"], reverse=True)
+            elif mkt_sort == "Price ↓":
+                mkt_players.sort(key=lambda x: x["price"], reverse=True)
+            else:
+                mkt_players.sort(key=lambda x: x["price"])
+
+            cols4 = st.columns(5)
+            for i, p in enumerate(mkt_players):
+                with cols4[i % 5]:
+                    bg, border, ovr_cls = get_card_class(p["type"])
+                    pos_cls = get_pos_class(p["pos"])
+
+                    is_sel = (st.session_state.selected_player and
+                              st.session_state.selected_player.get("name") == p["name"] and
+                              st.session_state.selected_player.get("_from") == "market")
+
+                    card_style = "border: 2px solid #22c55e !important;" if is_sel else ""
+
+                    if st.button(
+                        f"{p['emoji']} {p['ovr']}\n{p['name'][:10]}\n🪙{fmt_price(p['price'])}",
+                        key=f"mkt_card_{p['name']}",
+                        help=p['name']
+                    ):
+                        sel = dict(p); sel["_from"] = "market"
+                        st.session_state.selected_player = sel
+                        st.rerun()
+
+                    st.markdown(f"""
+                    <style>
+                    button[title="{p['name']}"] {{
+                        background: {('linear-gradient(145deg,#1a2535,#111d2e)' if is_sel else get_card_colors(p['type'])[1])} !important;
+                        border: {"2px solid #22c55e" if is_sel else "1px solid rgba(255,255,255,0.08)"} !important;
+                        color: {get_card_colors(p['type'])[2]} !important;
+                        font-size: 10px !important;
+                        white-space: pre-line !important;
+                        line-height: 1.4 !important;
+                        min-height: 70px !important;
+                        border-radius: 10px !important;
+                    }}
+                    </style>
+                    """, unsafe_allow_html=True)
+
+            if st.button("🔄 REFRESH", key="mkt_refresh"):
+                st.rerun()
+
+        with mc2:
+            # Selected player details
+            sel = st.session_state.selected_player
+            if sel and sel.get("_from") == "market":
+                bc, bg, ovr_c = get_card_colors(sel["type"])
+                in_wl = sel["name"] in st.session_state.watchlist
+
+                st.markdown(f"""
+                <div style="background:{bg};border:2px solid {bc};border-radius:14px;
+                            padding:20px;text-align:center;margin-bottom:12px;
+                            box-shadow:0 0 20px {bc}33;">
+                    <div style="font-size:11px;font-weight:800;color:#9ca3af;letter-spacing:1px;">{sel['pos']} | {sel.get('nat','')}</div>
+                    <div style="font-size:48px;font-weight:900;color:{ovr_c};font-family:'Barlow Condensed',sans-serif;">{sel['ovr']}</div>
+                    <div style="font-size:36px;margin:6px 0;">{sel.get('emoji','⚽')}</div>
+                    <div style="font-size:16px;font-weight:800;color:#f0f0f0;text-transform:uppercase;">{sel['name']}</div>
+                    <div style="font-size:11px;color:#6b7280;margin-top:2px;">{sel.get('club','')}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                # Watch toggle
+                wl_label = "👁️ Watching" if in_wl else "👁️ Watch Player"
+                if st.button(wl_label, key="watch_btn"):
+                    if in_wl:
+                        st.session_state.watchlist.remove(sel["name"])
+                    else:
+                        st.session_state.watchlist.append(sel["name"])
+                    st.rerun()
+
+                # Price info
+                st.markdown(f"""
+                <div style="background:#111520;border:1px solid rgba(255,255,255,0.06);
+                            border-radius:10px;padding:14px;margin:8px 0;">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                        <span style="color:#6b7280;font-size:12px;">Current Value</span>
+                        <span style="color:#fbbf24;font-weight:700;font-size:12px;">{fmt_price(sel['price'])}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                        <span style="color:#6b7280;font-size:12px;">Lowest Value</span>
+                        <span style="color:#22c55e;font-weight:700;font-size:12px;">{fmt_price(sel['low'])}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;">
+                        <span style="color:#6b7280;font-size:12px;">Highest Value</span>
+                        <span style="color:#ef4444;font-weight:700;font-size:12px;">{fmt_price(sel['high'])}</span>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                can_afford = st.session_state.coins >= sel["price"]
+                btn_label = f"🪙 PURCHASE\n{fmt_price(sel['price'])}"
+
+                if st.button(btn_label, key="purchase_btn", disabled=not can_afford):
+                    st.session_state.coins -= sel["price"]
+                    st.success(f"✅ {sel['name']} sotib olindi!")
+                    st.session_state.selected_player = None
+                    st.rerun()
+
+                if not can_afford:
+                    st.markdown("""
+                    <div style="color:#ef4444;font-size:11px;text-align:center;">
+                    ⚠️ Yetarli coins yo'q
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                # Price trend chart
+                days = list(range(7, 0, -1))
+                base = sel["price"]
+                prices = [base * (0.9 + random.uniform(0, 0.2)) for _ in days]
+                prices[-1] = sel["price"]
+
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(
+                    x=[f"Day -{d}" for d in days], y=prices,
+                    mode='lines+markers',
+                    line=dict(color='#fbbf24', width=2),
+                    marker=dict(size=5, color='#f59e0b'),
+                    fill='tozeroy', fillcolor='rgba(251,191,36,0.08)'
+                ))
+                fig.update_layout(
+                    height=140, margin=dict(l=0,r=0,t=0,b=0),
+                    paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                    xaxis=dict(showgrid=False, showticklabels=False, color='#6b7280'),
+                    yaxis=dict(showgrid=False, showticklabels=False),
+                    showlegend=False
+                )
+                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+            else:
+                st.markdown("""
+                <div style="background:#111520;border:1px solid rgba(255,255,255,0.06);
+                            border-radius:12px;padding:30px;text-align:center;color:#4b5563;">
+                    <div style="font-size:32px;margin-bottom:8px;">👆</div>
+                    <div style="font-size:13px;font-weight:600;">Select a player to view details</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+    with mkt_tab2:
+        st.markdown('<div class="fc-section-title">👤 MY PLAYERS</div><div class="fc-section-line"></div>', unsafe_allow_html=True)
+        my_pl_cols = st.columns(4)
+        for i, player in enumerate(MY_TEAM["players"] + RESERVES[:4]):
+            with my_pl_cols[i % 4]:
+                st.markdown(render_player_card(player), unsafe_allow_html=True)
+
+    with mkt_tab3:
+        st.markdown('<div class="fc-section-title">👁️ MY WATCHLIST</div><div class="fc-section-line"></div>', unsafe_allow_html=True)
+        if st.session_state.watchlist:
+            wl_players = [p for p in MARKET_PLAYERS if p["name"] in st.session_state.watchlist]
+            wl_cols = st.columns(4)
+            for i, p in enumerate(wl_players):
+                with wl_cols[i % 4]:
+                    st.markdown(render_player_card(p, show_price=True), unsafe_allow_html=True)
+        else:
+            st.markdown("""
+            <div style="padding:40px;text-align:center;color:#4b5563;">
+                <div style="font-size:40px;">👁️</div>
+                <div style="font-size:14px;font-weight:600;margin-top:8px;">Watchlist bo'sh</div>
+                <div style="font-size:12px;margin-top:4px;">O'yinchi kartasida Watch bosing</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    with mkt_tab4:
+        st.markdown('<div class="fc-section-title">📋 MY ORDERS</div><div class="fc-section-line"></div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div style="padding:40px;text-align:center;color:#4b5563;">
+            <div style="font-size:40px;">📋</div>
+            <div style="font-size:14px;font-weight:600;margin-top:8px;">Faol buyurtmalar yo'q</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with mkt_tab5:
+        st.markdown('<div class="fc-section-title">🔍 ADVANCED SEARCH</div><div class="fc-section-line"></div>', unsafe_allow_html=True)
+        s1, s2, s3, s4 = st.columns(4)
+        with s1:
+            st.text_input("Player Name", placeholder="e.g. Maradona", key="adv_name")
+        with s2:
+            st.selectbox("Position", ["Any","GK","CB","LB","RB","CDM","CM","CAM","LW","RW","ST"], key="adv_pos")
+        with s3:
+            st.selectbox("Card Type", ["Any","ICON","HERO","GOLD","SPECIAL"], key="adv_type")
+        with s4:
+            st.number_input("Min OVR", 100, 130, 110, key="adv_ovr")
+
+        max_price_b = st.slider("Max Price (Billions)", 0.5, 10.0, 5.0, 0.5, key="adv_price",
+                                 format="%.1fB")
+
+        if st.button("🔍 SEARCH NOW", key="adv_search"):
+            results = [p for p in MARKET_PLAYERS if p["ovr"] >= st.session_state.adv_ovr
+                       and p["price"] <= max_price_b * 1e9]
+            st.markdown(f"**{len(results)} ta natija topildi:**")
+            r_cols = st.columns(5)
+            for i, p in enumerate(results):
+                with r_cols[i % 5]:
+                    st.markdown(render_player_card(p, show_price=True), unsafe_allow_html=True)
+
+
+# ══════════════════════════════════════════════════════════════════
+#  DRAFT
+# ══════════════════════════════════════════════════════════════════
+elif st.session_state.page == "draft":
+
+    d_col1, d_col2 = st.columns([1, 3])
+
+    with d_col1:
+        st.markdown('<div class="fc-section-title">📦 DRAFT</div><div class="fc-section-line"></div>', unsafe_allow_html=True)
+
+        for draft_name, draft_data in DRAFT_POOLS.items():
+            is_hot = draft_data.get("hot", False)
+            if "selected_draft" not in st.session_state:
+                st.session_state.selected_draft = "CAPPED LEGENDS"
+
+            is_sel = st.session_state.get("selected_draft") == draft_name
+            border = "border-color: #22c55e;" if is_sel else ""
+
+            if st.button(
+                f"{'🔥 ' if is_hot else ''}{'✅ ' if is_sel else ''}{draft_name}\n{'HOT' if is_hot else draft_data['ends']}",
+                key=f"draft_btn_{draft_name}"
+            ):
+                st.session_state.selected_draft = draft_name
+                st.rerun()
+
+    with d_col2:
+        sel_draft_name = st.session_state.get("selected_draft", "CAPPED LEGENDS")
+        sel_draft = DRAFT_POOLS.get(sel_draft_name, DRAFT_POOLS["CAPPED LEGENDS"])
+
+        st.markdown(f"""
+        <div style="padding:16px 16px 0;">
+            <div style="font-size:18px;font-weight:900;color:#f0f0f0;text-transform:uppercase;letter-spacing:1px;">
+                {sel_draft_name} DRAFT
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+                <span style="color:#6b7280;font-size:12px;">⏱️ Ends in:</span>
+                <span style="color:#22c55e;font-size:12px;font-weight:700;">{sel_draft.get('ends','Soon')}</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if sel_draft.get("pool_a"):
+            st.markdown("""
+            <div style="margin:12px 16px 6px;">
+                <div style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);
+                            border-radius:8px;padding:6px 12px;display:inline-block;">
+                    <span style="font-size:12px;font-weight:800;color:#f59e0b;letter-spacing:1px;">POOL A</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            pool_cols = st.columns(3)
+            for i, p in enumerate(sel_draft["pool_a"]):
+                with pool_cols[i % 3]:
+                    st.markdown(render_player_card(p), unsafe_allow_html=True)
+
+        # Guaranteed info
+        st.markdown(f"""
+        <div style="padding:12px 16px;">
+            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                <div style="background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3);
+                            border-radius:8px;padding:8px 14px;display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:11px;font-weight:800;color:#a855f7;">POOL B</span>
+                    <span style="color:#6b7280;font-size:11px;">or Higher Guaranteed in:</span>
+                    <span style="color:#f0f0f0;font-weight:700;font-size:13px;">{sel_draft.get('pool_b_guaranteed','N/A')} Drafts</span>
+                </div>
+                <div style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);
+                            border-radius:8px;padding:8px 14px;display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:11px;font-weight:800;color:#f59e0b;">POOL A</span>
+                    <span style="color:#6b7280;font-size:11px;">Guaranteed in:</span>
+                    <span style="color:#f0f0f0;font-weight:700;font-size:13px;">{sel_draft.get('pool_a_guaranteed','N/A')} Drafts</span>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Draft buttons
+        btn_c1, btn_c2, btn_c3 = st.columns([1, 1, 2])
+        with btn_c1:
+            if st.button(f"🎫 1 DRAFT\n{sel_draft['cost_single']} Voucher", key="draft_1x"):
+                if st.session_state.gems >= 100:
+                    pulled = random.choice(sel_draft["pool_a"]) if sel_draft.get("pool_a") else None
+                    if pulled:
+                        st.success(f"🎉 {pulled['name']} {pulled['ovr']} OVR tushdi!")
+                    else:
+                        st.info("Pack ochildi!")
+
+        with btn_c2:
+            if st.button(f"🎁 10 DRAFTS\n{sel_draft['cost_ten']} Vouchers", key="draft_10x"):
+                results = []
+                if sel_draft.get("pool_a"):
+                    for _ in range(min(10, len(sel_draft["pool_a"]))):
+                        results.append(random.choice(sel_draft["pool_a"]))
+                if results:
+                    st.success(f"🎉 10 pack ochildi! En yaxshi: {max(results, key=lambda x: x['ovr'])['name']} {max(results, key=lambda x: x['ovr'])['ovr']} OVR")
+
+        with btn_c3:
+            voucher_count = random.randint(0, 5)
+            st.markdown(f"""
+            <div style="background:#111520;border:1px solid rgba(255,255,255,0.06);
+                        border-radius:10px;padding:10px;display:flex;gap:16px;">
+                <div style="text-align:center;">
+                    <div style="font-size:22px;">🎫</div>
+                    <div style="color:#6b7280;font-size:10px;">Vouchers</div>
+                    <div style="color:#f0f0f0;font-weight:700;">{voucher_count}</div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-size:22px;">💎</div>
+                    <div style="color:#6b7280;font-size:10px;">Gems</div>
+                    <div style="color:#f0f0f0;font-weight:700;">{st.session_state.gems:,}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+
+# ══════════════════════════════════════════════════════════════════
+#  EXCHANGE
+# ══════════════════════════════════════════════════════════════════
+elif st.session_state.page == "exchange":
+
+    exc_tabs = st.tabs(list(EXCHANGE_ITEMS.keys()))
+
+    for tab, (exc_cat, items) in zip(exc_tabs, EXCHANGE_ITEMS.items()):
+        with tab:
+            sub_tab1, sub_tab2 = st.tabs(["📦 ITEM EXCHANGE", "👤 PLAYER EXCHANGE"])
+
+            with sub_tab1:
+                st.markdown(f'<div class="fc-section-title">{exc_cat}</div><div class="fc-section-line"></div>', unsafe_allow_html=True)
+
+                # Mr Manager intro (first category only)
+                if exc_cat == "RANK UP & TRAINING":
+                    st.markdown("""
+                    <div style="background:#111520;border:1px solid rgba(255,255,255,0.06);border-radius:12px;
+                                padding:16px;margin:0 16px 16px;display:flex;gap:14px;align-items:flex-start;">
+                        <div style="font-size:36px;min-width:40px;">🤵</div>
+                        <div>
+                            <div style="font-size:14px;font-weight:700;color:#f0f0f0;">Mr. Manager ✓</div>
+                            <div style="font-size:12px;color:#9ca3af;margin-top:4px;line-height:1.6;">
+                                Welcome to the Item Exchange, where you can trade in Player Items for currencies.
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                cols3 = st.columns(3)
+                for i, item in enumerate(items):
+                    with cols3[i % 3]:
+                        sale_badge = '<div style="position:absolute;top:-6px;right:-6px;background:linear-gradient(135deg,#dc2626,#b91c1c);color:white;font-size:9px;font-weight:800;padding:3px 7px;border-radius:10px;letter-spacing:0.5px;">50% OFF</div>' if item.get("sale") else ""
+                        expires = f'<div style="color:#6b7280;font-size:10px;margin-top:4px;">⏱️ {item.get("expires","")}</div>' if item.get("expires") else ""
+                        items_needed = ""
+                        if item.get("items_needed"):
+                            items_needed = '<div style="display:flex;justify-content:center;gap:4px;margin:8px 0;">' + "".join([f'<div style="background:rgba(255,255,255,0.05);border-radius:4px;padding:4px 6px;font-size:10px;color:#9ca3af;">{it}</div>' for it in item["items_needed"]]) + '</div>'
+
+                        st.markdown(f"""
+                        <div class="exchange-card" style="position:relative;margin-bottom:8px;">
+                            {sale_badge}
+                            <div style="font-size:32px;text-align:center;margin-bottom:8px;">{item['icon']}</div>
+                            {items_needed}
+                            <div style="font-size:13px;font-weight:700;color:#f0f0f0;text-align:center;">{item['name']}</div>
+                            <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06);">
+                                <div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7280;margin:2px 0;">
+                                    <span>Target:</span><span style="color:#9ca3af;">{item['target']}</span>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7280;margin:2px 0;">
+                                    <span>Limit:</span><span style="color:#9ca3af;">{item['limit']}</span>
+                                </div>
+                            </div>
+                            {expires}
+                        </div>
+                        """, unsafe_allow_html=True)
+
+            with sub_tab2:
+                st.markdown(f'<div class="fc-section-title">👤 PLAYER EXCHANGE — {exc_cat}</div><div class="fc-section-line"></div>', unsafe_allow_html=True)
+                st.markdown("""
+                <div style="padding:40px;text-align:center;color:#4b5563;">
+                    <div style="font-size:40px;">🔄</div>
+                    <div style="font-size:14px;font-weight:600;margin-top:8px;">Player Exchange items</div>
+                    <div style="font-size:12px;margin-top:4px;">Trade players for exclusive rewards</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+
+# ══════════════════════════════════════════════════════════════════
+#  STORE
+# ══════════════════════════════════════════════════════════════════
+elif st.session_state.page == "store":
+
+    st.markdown('<div class="fc-section-title">🛒 STORE</div><div class="fc-section-line"></div>', unsafe_allow_html=True)
+
+    str_tab1, str_tab2, str_tab3, str_tab4, str_tab5 = st.tabs([
+        "⭐ RECOMMENDED", "🪙 FC POINTS & GEMS", "🔄 EXCHANGES", "💎 SILVER", "⭐ STAR PASS"
+    ])
+
+    def store_cat_tab(tab_obj, category, title):
+        with tab_obj:
+            items = [it for it in STORE_ITEMS if it["type"] == category]
+            if not items:
+                items = STORE_ITEMS[:6]
+
+            st.markdown(f'<div class="fc-section-title">{title}</div><div class="fc-section-line"></div>', unsafe_allow_html=True)
+
+            s_cols = st.columns(4)
+            for i, item in enumerate(items):
+                with s_cols[i % 4]:
+                    sale_html = f'<div class="store-badge-sale">{item["sale"]}</div>' if item.get("sale") else ""
+                    limit_html = f'<div class="store-limit-badge">{item["limit"]}</div>' if item.get("limit") else ""
+                    price_html = ""
+                    if item.get("price_coins") and item["sale"] not in ["LIMIT"]:
+                        price_html = f'<div class="fc-market-price" style="justify-content:center;">🪙 {item["price_coins"]:,}</div>'
+                    if item.get("price_gems"):
+                        price_html += f'<div style="color:#a855f7;font-size:11px;font-weight:700;text-align:center;">💎 {item["price_gems"]:,}</div>'
+                    if item.get("sale") == "LIMIT":
+                        price_html = '<div style="color:#6b7280;font-size:12px;font-weight:700;text-align:center;">LIMIT REACHED ✓</div>'
+
+                    st.markdown(f"""
+                    <div class="store-card" style="position:relative;margin-bottom:8px;">
+                        {sale_html}
+                        {limit_html}
+                        <div style="font-size:36px;margin:8px 0;">{item['icon']}</div>
+                        <div style="font-size:12px;font-weight:700;color:#f0f0f0;margin-bottom:8px;">{item['name']}</div>
+                        {price_html}
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                    is_limited = item.get("sale") == "LIMIT"
+                    if not is_limited:
+                        if st.button(f"Buy {item['name'][:12]}", key=f"store_{i}_{item['name']}"):
+                            cost = item.get("price_coins", 0) or 0
+                            if st.session_state.coins >= cost:
+                                st.session_state.coins -= cost
+                                st.success(f"✅ {item['name']} sotib olindi!")
+                            else:
+                                st.error("Yetarli coins yo'q!")
+
+    store_cat_tab(str_tab1, "featured",   "🌟 FEATURED ITEMS")
+    store_cat_tab(str_tab2, "festive",    "🎉 FESTIVE ITEMS")
+    store_cat_tab(str_tab3, "featured",   "🔄 EXCHANGES")
+    store_cat_tab(str_tab4, "featured",   "💎 SILVER ITEMS")
+    store_cat_tab(str_tab5, "star_pass",  "⭐ STAR PASS")
+
+
+# ══════════════════════════════════════════════════════════════════
+#  QUESTS
+# ══════════════════════════════════════════════════════════════════
+elif st.session_state.page == "quests":
+
+    st.markdown('<div class="fc-section-title">🎯 QUESTS & MISSIONS</div><div class="fc-section-line"></div>', unsafe_allow_html=True)
+
+    q_tab1, q_tab2 = st.tabs(["📅 DAILY", "📆 WEEKLY"])
+
+    def render_quests(quests_list):
+        for q in quests_list:
+            pct = int(q["progress"] / q["total"] * 100)
+            done = q["progress"] >= q["total"]
+            done_badge = '<span style="background:rgba(34,197,94,0.2);color:#22c55e;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px;">✓ DONE</span>' if done else ""
+            st.markdown(f"""
+            <div class="quest-item">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:20px;">{q['icon']}</span>
+                        <span style="font-size:13px;font-weight:700;color:#f0f0f0;">{q['name']}{done_badge}</span>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:11px;color:#fbbf24;font-weight:700;">{q['reward']}</div>
+                        <div style="font-size:10px;color:#6b7280;">{q['progress']}/{q['total']}</div>
+                    </div>
+                </div>
+                <div class="quest-progress-bar">
+                    <div class="quest-progress-fill" style="width:{pct}%;background:{'linear-gradient(90deg,#22c55e,#16a34a)' if not done else 'linear-gradient(90deg,#fbbf24,#d97706)'};"></div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            if done:
+                col1, col2 = st.columns([3, 1])
+                with col2:
+                    if st.button("🎁 CLAIM", key=f"claim_{q['name']}"):
+                        st.success(f"✅ {q['reward']} olindi!")
+
+    with q_tab1:
+        total_daily = len(DAILY_QUESTS)
+        done_daily = sum(1 for q in DAILY_QUESTS if q["progress"] >= q["total"])
+        st.markdown(f"""
+        <div style="padding:12px 16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="color:#6b7280;font-size:12px;font-weight:700;">DAILY PROGRESS</span>
+                <span style="color:#22c55e;font-size:12px;font-weight:700;">{done_daily}/{total_daily} complete</span>
+            </div>
+            <div style="background:rgba(255,255,255,0.05);border-radius:6px;height:8px;overflow:hidden;">
+                <div style="width:{done_daily/total_daily*100:.0f}%;height:100%;background:linear-gradient(90deg,#22c55e,#16a34a);border-radius:6px;"></div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        render_quests(DAILY_QUESTS)
+
+    with q_tab2:
+        total_weekly = len(WEEKLY_QUESTS)
+        done_weekly = sum(1 for q in WEEKLY_QUESTS if q["progress"] >= q["total"])
+        st.markdown(f"""
+        <div style="padding:12px 16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="color:#6b7280;font-size:12px;font-weight:700;">WEEKLY PROGRESS</span>
+                <span style="color:#fbbf24;font-size:12px;font-weight:700;">{done_weekly}/{total_weekly} complete</span>
+            </div>
+            <div style="background:rgba(255,255,255,0.05);border-radius:6px;height:8px;overflow:hidden;">
+                <div style="width:{done_weekly/total_weekly*100:.0f}%;height:100%;background:linear-gradient(90deg,#fbbf24,#d97706);border-radius:6px;"></div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        render_quests(WEEKLY_QUESTS)
+
+
+# ══════════════════════════════════════════════════════════════════
+#  LEAGUES
+# ══════════════════════════════════════════════════════════════════
+elif st.session_state.page == "leagues":
+
+    st.markdown('<div class="fc-section-title">🤝 LEAGUES</div><div class="fc-section-line"></div>', unsafe_allow_html=True)
+
+    lg_tab1, lg_tab2, lg_tab3 = st.tabs(["🏆 LEADERBOARD", "📊 STATS", "ℹ️ INFO"])
+
+    with lg_tab1:
+        # League header
+        st.markdown("""
+        <div style="background:linear-gradient(135deg,#111520,#0d1520);border:1px solid rgba(255,255,255,0.08);
+                    border-radius:14px;padding:16px;margin:12px 16px;text-align:center;">
+            <div style="font-size:24px;font-weight:900;color:#f0f0f0;text-transform:uppercase;letter-spacing:2px;">
+                ⭐ ELITE MASTERS FC ⭐
+            </div>
+            <div style="color:#22c55e;font-size:12px;font-weight:700;margin-top:4px;">Division 1 • 10/100 Members</div>
+            <div style="display:flex;justify-content:center;gap:20px;margin-top:12px;">
+                <div style="text-align:center;">
+                    <div style="font-size:18px;font-weight:800;color:#fbbf24;">121</div>
+                    <div style="font-size:10px;color:#6b7280;">AVG OVR</div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-size:18px;font-weight:800;color:#22c55e;">98,350</div>
+                    <div style="font-size:10px;color:#6b7280;">Total Pts</div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-size:18px;font-weight:800;color:#a855f7;">Rank #4</div>
+                    <div style="font-size:10px;color:#6b7280;">Global</div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Leaderboard
+        st.markdown("""
+        <div style="background:#111520;border:1px solid rgba(255,255,255,0.06);border-radius:12px;overflow:hidden;margin:0 16px;">
+            <div style="display:flex;justify-content:space-between;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.06);">
+                <span style="font-size:10px;font-weight:800;color:#6b7280;letter-spacing:1px;">#</span>
+                <span style="font-size:10px;font-weight:800;color:#6b7280;letter-spacing:1px;flex:1;margin-left:16px;">PLAYER</span>
+                <span style="font-size:10px;font-weight:800;color:#6b7280;letter-spacing:1px;">OVR</span>
+                <span style="font-size:10px;font-weight:800;color:#6b7280;letter-spacing:1px;margin-left:16px;">POINTS</span>
+            </div>
+        """, unsafe_allow_html=True)
+
+        for member in LEAGUE_MEMBERS:
+            is_me = member["name"] == "Somosab"
+            rank_color = {"1": "#fbbf24", "2": "#9ca3af", "3": "#cd7f32"}.get(str(member["rank"]), "#6b7280")
+            bg = "background:rgba(34,197,94,0.06);" if is_me else ""
+            border = "border-left:3px solid #22c55e;" if is_me else "border-left:3px solid transparent;"
+
+            st.markdown(f"""
+            <div style="{bg}{border}display:flex;align-items:center;justify-content:space-between;
+                        padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.04);">
+                <span style="font-size:14px;font-weight:800;color:{rank_color};min-width:20px;">{member['rank']}</span>
+                <div style="flex:1;display:flex;align-items:center;gap:8px;margin-left:8px;">
+                    <span style="font-size:16px;">{member['country']}</span>
+                    <span style="font-size:13px;font-weight:{'800' if is_me else '600'};color:{'#22c55e' if is_me else '#f0f0f0'};">
+                        {member['name']}{'  ← YOU' if is_me else ''}
+                    </span>
+                </div>
+                <div style="background:linear-gradient(135deg,#dc2626,#991b1b);color:white;font-weight:800;
+                            font-size:12px;padding:3px 8px;border-radius:6px;min-width:40px;text-align:center;">
+                    {member['ovr']}
+                </div>
+                <div style="color:#fbbf24;font-weight:700;font-size:12px;margin-left:16px;min-width:50px;text-align:right;">
+                    {member['pts']:,}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with lg_tab2:
+        st.markdown('<div class="fc-section-title">📊 LEAGUE STATISTICS</div><div class="fc-section-line"></div>', unsafe_allow_html=True)
+
+        stat_cols = st.columns(4)
+        lg_stats = [
+            ("🏆", "League Rank",    "#4 Global",  "#fbbf24"),
+            ("⭐", "Avg OVR",        "121",         "#22c55e"),
+            ("⚽", "Goals Scored",   "2,847",       "#3b82f6"),
+            ("🛡️", "Goals Conceded","1,203",       "#a855f7"),
+        ]
+        for col, (ico, lbl, val, clr) in zip(stat_cols, lg_stats):
+            with col:
+                st.markdown(f"""
+                <div style="background:#111520;border:1px solid rgba(255,255,255,0.06);border-top:3px solid {clr};
+                            border-radius:10px;padding:14px;text-align:center;">
+                    <div style="font-size:24px;">{ico}</div>
+                    <div style="font-size:18px;font-weight:800;color:{clr};margin:4px 0;">{val}</div>
+                    <div style="font-size:10px;color:#6b7280;font-weight:700;letter-spacing:0.5px;">{lbl}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+        # Chart
+        members_df = pd.DataFrame(LEAGUE_MEMBERS)
+        fig = go.Figure()
+        fig.add_trace(go.Bar(
+            x=members_df["name"], y=members_df["pts"],
+            marker=dict(
+                color=["#22c55e" if n == "Somosab" else "#1e3a2f" for n in members_df["name"]],
+                line=dict(color=["#22c55e" if n == "Somosab" else "#374151" for n in members_df["name"]], width=1)
+            ),
+            text=members_df["pts"].apply(lambda x: f"{x:,}"),
+            textposition="outside", textfont=dict(color="#9ca3af", size=9)
+        ))
+        fig.update_layout(
+            height=260, margin=dict(l=0,r=0,t=10,b=0),
+            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+            xaxis=dict(color='#6b7280', tickfont=dict(size=9), gridcolor='rgba(255,255,255,0.04)'),
+            yaxis=dict(color='#6b7280', gridcolor='rgba(255,255,255,0.04)', tickfont=dict(size=9)),
+            showlegend=False
+        )
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+    with lg_tab3:
+        st.markdown("""
+        <div style="background:#111520;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:20px;margin:12px 16px;">
+            <div style="font-size:16px;font-weight:800;color:#f0f0f0;margin-bottom:12px;">ℹ️ LEAGUE INFO</div>
+            <div style="color:#9ca3af;font-size:13px;line-height:2;">
+            🏟️ <b style="color:#f0f0f0;">Name:</b> Elite Masters FC<br>
+            📊 <b style="color:#f0f0f0;">Division:</b> Division 1<br>
+            👥 <b style="color:#f0f0f0;">Members:</b> 10/100<br>
+            🌍 <b style="color:#f0f0f0;">Region:</b> Global<br>
+            🏆 <b style="color:#f0f0f0;">Season:</b> Season 12<br>
+            ⭐ <b style="color:#f0f0f0;">Min OVR:</b> 115 required<br>
+            🎯 <b style="color:#f0f0f0;">Weekly target:</b> 5 matches<br>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+
+# ══════════════════════════════════════════════════════════════════
+#  PAGE CLOSE
+# ══════════════════════════════════════════════════════════════════
+st.markdown('</div>', unsafe_allow_html=True)
